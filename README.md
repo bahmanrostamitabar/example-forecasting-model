@@ -15,6 +15,10 @@ cases, comparisons are made to an R package result.  A few Python and other
 language demos as well.
 
 
+[More detailed topics are available here](https://github.com/m-clark/docs)
+[More detailed about workshops are available here](https://github.com/m-clark/Workshops)
+
+
 At present the topics covered are:
 
 
