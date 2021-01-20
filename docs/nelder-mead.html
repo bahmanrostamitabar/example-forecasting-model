@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Nelder-Mead | Model Estimation by Example</title>
+  <meta name="description" content="This document provides ‘by-hand’ demonstrations of various models and algorithms. The goal is to take away some of the mystery by providing clean code examples that are easy to run and compare with other tools." />
+  <meta name="generator" content="bookdown 0.21 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Nelder-Mead | Model Estimation by Example" />
+  <meta property="og:type" content="book" />
+  <meta property="og:url" content="https://m-clark.github.io/models-by-example/" />
+  <meta property="og:image" content="https://m-clark.github.io/models-by-example/img/title_plot.svg" />
+  <meta property="og:description" content="This document provides ‘by-hand’ demonstrations of various models and algorithms. The goal is to take away some of the mystery by providing clean code examples that are easy to run and compare with other tools." />
+  <meta name="github-repo" content="m-clark/models-by-example/" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Nelder-Mead | Model Estimation by Example" />
+  
+  <meta name="twitter:description" content="This document provides ‘by-hand’ demonstrations of various models and algorithms. The goal is to take away some of the mystery by providing clean code examples that are easy to run and compare with other tools." />
+  <meta name="twitter:image" content="https://m-clark.github.io/models-by-example/img/title_plot.svg" />
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="img/R.ico" type="image/x-icon" />
+<link rel="prev" href="newton-irls.html"/>
+<link rel="next" href="em.html"/>
+<script src="libs/header-attrs-2.5/header-attrs.js"></script>
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+<script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+<script src="libs/htmlwidgets-1.5.2/htmlwidgets.js"></script>
+<script src="libs/viz-1.8.2/viz.js"></script>
+<link href="libs/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
+<script src="libs/grViz-binding-1.0.6.1/grViz.js"></script>
+<script src="libs/plotly-binding-4.9.2.1/plotly.js"></script>
+<script src="libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="libs/crosstalk-1.1.0.1/css/crosstalk.css" rel="stylesheet" />
+<script src="libs/crosstalk-1.1.0.1/js/crosstalk.min.js"></script>
+<link href="libs/plotly-htmlwidgets-css-1.52.2/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="libs/plotly-main-1.52.2/plotly-latest.min.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<link rel="stylesheet" href="css/book.css" type="text/css" />
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.1/css/all.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class='before'><a href="./">Model Estimation by Example</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="part"><span><b>Models</b></span></li>
+<li class="chapter" data-level="" data-path="linear-regression.html"><a href="linear-regression.html"><i class="fa fa-check"></i>Linear Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="linear-regression.html"><a href="linear-regression.html#data-setup"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="linear-regression.html"><a href="linear-regression.html#functions"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="linear-regression.html"><a href="linear-regression.html#estimation"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="linear-regression.html"><a href="linear-regression.html#comparison"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="linear-regression.html"><a href="linear-regression.html#python"><i class="fa fa-check"></i>Python</a></li>
+<li class="chapter" data-level="" data-path="linear-regression.html"><a href="linear-regression.html#source"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="logistic-regression.html"><a href="logistic-regression.html"><i class="fa fa-check"></i>Logistic Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="logistic-regression.html"><a href="logistic-regression.html#data-setup-1"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="logistic-regression.html"><a href="logistic-regression.html#functions-1"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="logistic-regression.html"><a href="logistic-regression.html#estimation-1"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="logistic-regression.html"><a href="logistic-regression.html#comparison-1"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="logistic-regression.html"><a href="logistic-regression.html#python-1"><i class="fa fa-check"></i>Python</a></li>
+<li class="chapter" data-level="" data-path="logistic-regression.html"><a href="logistic-regression.html#source-1"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html"><i class="fa fa-check"></i>Mixed Models</a>
+<ul>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#one-factor-mixed-model"><i class="fa fa-check"></i>One-factor Mixed Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#data-setup-2"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#function"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#estimation-2"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#comparison-2"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#source-2"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#two-factor-mixed-model"><i class="fa fa-check"></i>Two-factor Mixed Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#data-setup-3"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#function-1"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#estimation-3"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#comparison-3"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#source-3"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#mixed-model-via-ml"><i class="fa fa-check"></i>Mixed Model via ML</a>
+<ul>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#introduction-1"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#data-setup-4"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#function-2"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#estimation-4"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#comparison-4"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#link-with-penalized-regression"><i class="fa fa-check"></i>Link with penalized regression</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#source-4"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="probit.html"><a href="probit.html"><i class="fa fa-check"></i>Probit &amp; Bivariate Probit</a>
+<ul>
+<li class="chapter" data-level="" data-path="probit.html"><a href="probit.html#standard-probit"><i class="fa fa-check"></i>Standard Probit</a>
+<ul>
+<li class="chapter" data-level="" data-path="probit.html"><a href="probit.html#function-3"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="probit.html"><a href="probit.html#examples"><i class="fa fa-check"></i>Examples</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="probit.html"><a href="probit.html#bivariate-probit"><i class="fa fa-check"></i>Bivariate Probit</a>
+<ul>
+<li class="chapter" data-level="" data-path="probit.html"><a href="probit.html#example"><i class="fa fa-check"></i>Example</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="probit.html"><a href="probit.html#source-5"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="heckman-selection.html"><a href="heckman-selection.html"><i class="fa fa-check"></i>Heckman Selection</a>
+<ul>
+<li class="chapter" data-level="" data-path="heckman-selection.html"><a href="heckman-selection.html#data-setup-5"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="heckman-selection.html"><a href="heckman-selection.html#two-step-approach"><i class="fa fa-check"></i>Two step approach</a>
+<ul>
+<li class="chapter" data-level="" data-path="heckman-selection.html"><a href="heckman-selection.html#step-1-probit-model"><i class="fa fa-check"></i>Step 1: Probit Model</a></li>
+<li class="chapter" data-level="" data-path="heckman-selection.html"><a href="heckman-selection.html#step-2-estimate-via-linear-regression"><i class="fa fa-check"></i>Step 2: Estimate via Linear Regression</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="heckman-selection.html"><a href="heckman-selection.html#maximum-likelihood"><i class="fa fa-check"></i>Maximum Likelihood</a>
+<ul>
+<li class="chapter" data-level="" data-path="heckman-selection.html"><a href="heckman-selection.html#comparison-5"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="heckman-selection.html"><a href="heckman-selection.html#source-6"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="marginal-structural.html"><a href="marginal-structural.html"><i class="fa fa-check"></i>Marginal Structural Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="marginal-structural.html"><a href="marginal-structural.html#data-setup-6"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="marginal-structural.html"><a href="marginal-structural.html#function-4"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="marginal-structural.html"><a href="marginal-structural.html#estimation-5"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="marginal-structural.html"><a href="marginal-structural.html#comparison-6"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="marginal-structural.html"><a href="marginal-structural.html#source-7"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html"><i class="fa fa-check"></i>Tobit Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html#censoring-with-an-upper-limit"><i class="fa fa-check"></i>Censoring with an Upper Limit</a>
+<ul>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html#data-setup-7"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html#function-5"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html#estimation-6"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html#comparison-7"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html#censoring-with-a-lower-limit"><i class="fa fa-check"></i>Censoring with a Lower Limit</a>
+<ul>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html#comparison-8"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="tobit.html"><a href="tobit.html#source-8"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html"><i class="fa fa-check"></i>Cox Survival</a>
+<ul>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#standard-proportional-hazards"><i class="fa fa-check"></i>Standard Proportional Hazards</a>
+<ul>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#data-setup-8"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#function-6"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#estimation-7"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#comparison-9"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#time-varying-coefficients"><i class="fa fa-check"></i>Time-varying coefficients</a>
+<ul>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#data-setup-9"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#function-7"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#estimation-8"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#comparison-10"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#stratified-cox-model"><i class="fa fa-check"></i>Stratified Cox Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#data-setup-10"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#function-8"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#estimation-9"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#comparison-11"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cox.html"><a href="cox.html#source-9"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html"><i class="fa fa-check"></i>Hurdle Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#poisson"><i class="fa fa-check"></i>Poisson</a>
+<ul>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#data-setup-11"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#function-9"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#estimation-10"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#comparison-12"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#negative-binomial"><i class="fa fa-check"></i>Negative Binomial</a>
+<ul>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#function-10"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#estimation-11"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#comparison-13"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="hurdle.html"><a href="hurdle.html#source-10"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html"><i class="fa fa-check"></i>Zero-Inflated Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#poisson-1"><i class="fa fa-check"></i>Poisson</a>
+<ul>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#data-setup-12"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#function-11"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#estimation-12"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#comparison-14"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#negative-binomial-1"><i class="fa fa-check"></i>Negative Binomial</a>
+<ul>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#function-12"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#estimation-13"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#comparison-15"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#supplemental-example"><i class="fa fa-check"></i>Supplemental Example</a></li>
+<li class="chapter" data-level="" data-path="zi.html"><a href="zi.html#source-11"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="naive-bayes.html"><a href="naive-bayes.html"><i class="fa fa-check"></i>Naive Bayes</a>
+<ul>
+<li class="chapter" data-level="" data-path="naive-bayes.html"><a href="naive-bayes.html#initialization"><i class="fa fa-check"></i>Initialization</a></li>
+<li class="chapter" data-level="" data-path="naive-bayes.html"><a href="naive-bayes.html#comparison-16"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="naive-bayes.html"><a href="naive-bayes.html#source-12"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="multinomial.html"><a href="multinomial.html"><i class="fa fa-check"></i>Multinomial Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="multinomial.html"><a href="multinomial.html#standard-categorical-model"><i class="fa fa-check"></i>Standard (Categorical) Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="multinomial.html"><a href="multinomial.html#data-setup-13"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="multinomial.html"><a href="multinomial.html#function-13"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="multinomial.html"><a href="multinomial.html#comparison-17"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="multinomial.html"><a href="multinomial.html#alternative-specific-and-constant-variables"><i class="fa fa-check"></i>Alternative specific and constant variables</a>
+<ul>
+<li class="chapter" data-level="" data-path="multinomial.html"><a href="multinomial.html#comparison-18"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="multinomial.html"><a href="multinomial.html#source-13"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="ordinal.html"><a href="ordinal.html"><i class="fa fa-check"></i>Ordinal Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="ordinal.html"><a href="ordinal.html#data"><i class="fa fa-check"></i>Data</a></li>
+<li class="chapter" data-level="" data-path="ordinal.html"><a href="ordinal.html#function-14"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="ordinal.html"><a href="ordinal.html#estimation-14"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="ordinal.html"><a href="ordinal.html#comparison-19"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="ordinal.html"><a href="ordinal.html#source-14"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html"><i class="fa fa-check"></i>Markov Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html#data-setup-14"><i class="fa fa-check"></i>Data Setup</a>
+<ul>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html#data-functions"><i class="fa fa-check"></i>Data Functions</a></li>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html#two-states-demo"><i class="fa fa-check"></i>Two states Demo</a></li>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html#three-states-demo"><i class="fa fa-check"></i>Three states demo</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html#function-15"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html#estimation-15"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html#comparison-20"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="markov.html"><a href="markov.html#source-15"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="hmm.html"><a href="hmm.html"><i class="fa fa-check"></i>Hidden Markov Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="hmm.html"><a href="hmm.html#data-setup-15"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="hmm.html"><a href="hmm.html#function-16"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="hmm.html"><a href="hmm.html#estimation-16"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="hmm.html"><a href="hmm.html#supplemental-demo"><i class="fa fa-check"></i>Supplemental demo</a></li>
+<li class="chapter" data-level="" data-path="hmm.html"><a href="hmm.html#source-16"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html"><i class="fa fa-check"></i>Quantile Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html#data-setup-16"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html#function-17"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html#estimation-17"><i class="fa fa-check"></i>Estimation</a>
+<ul>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html#other-quantiles"><i class="fa fa-check"></i>Other quantiles</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html#comparison-21"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html#visualize"><i class="fa fa-check"></i>Visualize</a></li>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html#python-2"><i class="fa fa-check"></i>Python</a></li>
+<li class="chapter" data-level="" data-path="quantile-regression.html"><a href="quantile-regression.html#source-17"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cubic-spline.html"><a href="cubic-spline.html"><i class="fa fa-check"></i>Cubic Spline Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="cubic-spline.html"><a href="cubic-spline.html#data-setup-17"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="cubic-spline.html"><a href="cubic-spline.html#functions-2"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="cubic-spline.html"><a href="cubic-spline.html#example-1"><i class="fa fa-check"></i>Example 1</a></li>
+<li class="chapter" data-level="" data-path="cubic-spline.html"><a href="cubic-spline.html#example-2"><i class="fa fa-check"></i>Example 2</a></li>
+<li class="chapter" data-level="" data-path="cubic-spline.html"><a href="cubic-spline.html#source-18"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html"><i class="fa fa-check"></i>Gaussian Processes</a>
+<ul>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#noise-free-demonstration"><i class="fa fa-check"></i>Noise-Free Demonstration</a>
+<ul>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#data-setup-18"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#functions-3"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#visualize-the-prior-distribution"><i class="fa fa-check"></i>Visualize the prior distribution</a></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#generate-the-posterior-predictive-distribution"><i class="fa fa-check"></i>Generate the posterior predictive distribution</a></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#visualize-the-posterior-predictive-distribution"><i class="fa fa-check"></i>Visualize the Posterior Predictive Distribution</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#noisy-demonstration"><i class="fa fa-check"></i>Noisy Demonstration</a>
+<ul>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#data-setup-19"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#functions-4"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#visualize-the-prior-distribution-1"><i class="fa fa-check"></i>Visualize the prior distribution</a></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#generate-the-posterior-predictive-distribution-1"><i class="fa fa-check"></i>Generate the posterior predictive distribution</a></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#visualize-the-posterior-predictive-distribution-1"><i class="fa fa-check"></i>Visualize the Posterior Predictive Distribution</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="gaussian-process.html"><a href="gaussian-process.html#source-19"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html"><i class="fa fa-check"></i>Neural Network</a>
+<ul>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#example-1-1"><i class="fa fa-check"></i>Example 1</a>
+<ul>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#python-3"><i class="fa fa-check"></i>Python</a></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#r"><i class="fa fa-check"></i>R</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#example-2-1"><i class="fa fa-check"></i>Example 2</a>
+<ul>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#python-4"><i class="fa fa-check"></i>Python</a></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#r-1"><i class="fa fa-check"></i>R</a></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#comparison-22"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#example-3"><i class="fa fa-check"></i>Example 3</a>
+<ul>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#python-5"><i class="fa fa-check"></i>Python</a></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#r-2"><i class="fa fa-check"></i>R</a></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#comparison-23"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="neural-network.html"><a href="neural-network.html#source-20"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="elm.html"><a href="elm.html"><i class="fa fa-check"></i>Extreme Learning Machine</a>
+<ul>
+<li class="chapter" data-level="" data-path="elm.html"><a href="elm.html#data-setup-20"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="elm.html"><a href="elm.html#function-18"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="elm.html"><a href="elm.html#estimation-18"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="elm.html"><a href="elm.html#comparison-24"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="elm.html"><a href="elm.html#supplemental-example-1"><i class="fa fa-check"></i>Supplemental Example</a></li>
+<li class="chapter" data-level="" data-path="elm.html"><a href="elm.html#source-21"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html"><i class="fa fa-check"></i>Reproducing Kernel Hilbert Space Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#data-setup-21"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#functions-5"><i class="fa fa-check"></i>Functions</a>
+<ul>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#function-to-find-the-inverse-of-a-matrix"><i class="fa fa-check"></i>Function to find the inverse of a matrix</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#reproducing-kernel"><i class="fa fa-check"></i>Reproducing Kernel</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#gram-matrix"><i class="fa fa-check"></i>Gram matrix</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#ridge-regression"><i class="fa fa-check"></i>Ridge regression</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#estimation-19"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#comparison-25"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#example-cubic-spline"><i class="fa fa-check"></i>Example: Cubic Spline</a>
+<ul>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#data-setup-22"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#functions-6"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#estimation-20"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#comparison-26"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#source-22"><i class="fa fa-check"></i>Source</a>
+<ul>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#current-supplemental-code"><i class="fa fa-check"></i>Current Supplemental Code</a></li>
+<li class="chapter" data-level="" data-path="rkhs.html"><a href="rkhs.html#original-supplemental-code"><i class="fa fa-check"></i>Original Supplemental Code</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html"><i class="fa fa-check"></i>Confirmatory Factor Analysis</a>
+<ul>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html#data-setup-23"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html#functions-7"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html#estimation-21"><i class="fa fa-check"></i>Estimation</a>
+<ul>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html#raw"><i class="fa fa-check"></i>Raw</a></li>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html#standardized"><i class="fa fa-check"></i>Standardized</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html#comparison-27"><i class="fa fa-check"></i>Comparison</a>
+<ul>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html#mplus"><i class="fa fa-check"></i>Mplus</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cfa.html"><a href="cfa.html#source-23"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="part"><span><b>Bayesian</b></span></li>
+<li class="chapter" data-level="" data-path="bayesian.html"><a href="bayesian.html"><i class="fa fa-check"></i>Introduction to Bayesian Methods</a></li>
+<li class="chapter" data-level="" data-path="bayesian-basics.html"><a href="bayesian-basics.html"><i class="fa fa-check"></i>Basics</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-basics.html"><a href="bayesian-basics.html#prior-likelihood-posterior-distributions"><i class="fa fa-check"></i>Prior, likelihood, &amp; posterior distributions</a></li>
+<li class="chapter" data-level="" data-path="bayesian-basics.html"><a href="bayesian-basics.html#prior"><i class="fa fa-check"></i>Prior</a></li>
+<li class="chapter" data-level="" data-path="bayesian-basics.html"><a href="bayesian-basics.html#likelihood"><i class="fa fa-check"></i>Likelihood</a></li>
+<li class="chapter" data-level="" data-path="bayesian-basics.html"><a href="bayesian-basics.html#posterior"><i class="fa fa-check"></i>Posterior</a></li>
+<li class="chapter" data-level="" data-path="bayesian-basics.html"><a href="bayesian-basics.html#posterior-predictive"><i class="fa fa-check"></i>Posterior predictive</a></li>
+<li class="chapter" data-level="" data-path="bayesian-basics.html"><a href="bayesian-basics.html#source-24"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-t-test.html"><a href="bayesian-t-test.html"><i class="fa fa-check"></i>Bayesian t-test</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-t-test.html"><a href="bayesian-t-test.html#data-setup-24"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-t-test.html"><a href="bayesian-t-test.html#model-code"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-t-test.html"><a href="bayesian-t-test.html#estimation-22"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-t-test.html"><a href="bayesian-t-test.html#comparison-28"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-t-test.html"><a href="bayesian-t-test.html#visualization"><i class="fa fa-check"></i>Visualization</a></li>
+<li class="chapter" data-level="" data-path="bayesian-t-test.html"><a href="bayesian-t-test.html#source-25"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-linear-regression.html"><a href="bayesian-linear-regression.html"><i class="fa fa-check"></i>Bayesian Linear Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-linear-regression.html"><a href="bayesian-linear-regression.html#data-setup-25"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-linear-regression.html"><a href="bayesian-linear-regression.html#model-code-1"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-linear-regression.html"><a href="bayesian-linear-regression.html#estimation-23"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-linear-regression.html"><a href="bayesian-linear-regression.html#comparison-29"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-linear-regression.html"><a href="bayesian-linear-regression.html#visualize-1"><i class="fa fa-check"></i>Visualize</a></li>
+<li class="chapter" data-level="" data-path="bayesian-linear-regression.html"><a href="bayesian-linear-regression.html#source-26"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-beta-regression.html"><a href="bayesian-beta-regression.html"><i class="fa fa-check"></i>Bayesian Beta Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-beta-regression.html"><a href="bayesian-beta-regression.html#data-setup-26"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-beta-regression.html"><a href="bayesian-beta-regression.html#model-code-2"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-beta-regression.html"><a href="bayesian-beta-regression.html#estimation-24"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-beta-regression.html"><a href="bayesian-beta-regression.html#comparison-30"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-beta-regression.html"><a href="bayesian-beta-regression.html#visualization-1"><i class="fa fa-check"></i>Visualization</a></li>
+<li class="chapter" data-level="" data-path="bayesian-beta-regression.html"><a href="bayesian-beta-regression.html#source-27"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-model.html"><a href="bayesian-mixed-model.html"><i class="fa fa-check"></i>Bayesian Mixed Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-mixed-model.html"><a href="bayesian-mixed-model.html#data-setup-27"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-model.html"><a href="bayesian-mixed-model.html#model-code-3"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-model.html"><a href="bayesian-mixed-model.html#estimation-25"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-model.html"><a href="bayesian-mixed-model.html#comparison-31"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-model.html"><a href="bayesian-mixed-model.html#visualize-2"><i class="fa fa-check"></i>Visualize</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-model.html"><a href="bayesian-mixed-model.html#source-28"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-mediation.html"><a href="bayesian-mixed-mediation.html"><i class="fa fa-check"></i>Bayesian Multilevel Mediation</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-mixed-mediation.html"><a href="bayesian-mixed-mediation.html#data-setup-28"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-mediation.html"><a href="bayesian-mixed-mediation.html#model-code-4"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-mediation.html"><a href="bayesian-mixed-mediation.html#estimation-26"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-mediation.html"><a href="bayesian-mixed-mediation.html#comparison-32"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-mediation.html"><a href="bayesian-mixed-mediation.html#visualization-2"><i class="fa fa-check"></i>Visualization</a></li>
+<li class="chapter" data-level="" data-path="bayesian-mixed-mediation.html"><a href="bayesian-mixed-mediation.html#source-29"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html"><i class="fa fa-check"></i>Bayesian IRT</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#one-parameter-irt"><i class="fa fa-check"></i>One Parameter IRT</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#data-setup-29"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#model-code-5"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#estimation-27"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#comparison-33"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#two-parameter-irt"><i class="fa fa-check"></i>Two Parameter IRT</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#model-code-6"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#estimation-28"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#comparison-34"><i class="fa fa-check"></i>Comparison</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#three-parameter-irt"><i class="fa fa-check"></i>Three Parameter IRT</a></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#four-parameter-irt"><i class="fa fa-check"></i>Four Parameter IRT</a></li>
+<li class="chapter" data-level="" data-path="bayesian-irt.html"><a href="bayesian-irt.html#source-30"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-cfa.html"><a href="bayesian-cfa.html"><i class="fa fa-check"></i>Bayesian CFA</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-cfa.html"><a href="bayesian-cfa.html#data-setup-30"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-cfa.html"><a href="bayesian-cfa.html#model-code-7"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-cfa.html"><a href="bayesian-cfa.html#estimation-29"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-cfa.html"><a href="bayesian-cfa.html#comparison-35"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-cfa.html"><a href="bayesian-cfa.html#source-31"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-non-parametric.html"><a href="bayesian-non-parametric.html"><i class="fa fa-check"></i>Bayesian Nonparametric Models</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-non-parametric.html"><a href="bayesian-non-parametric.html#chinese-restaurant-process"><i class="fa fa-check"></i>Chinese Restaurant Process</a></li>
+<li class="chapter" data-level="" data-path="bayesian-non-parametric.html"><a href="bayesian-non-parametric.html#indian-buffet-process"><i class="fa fa-check"></i>Indian Buffet Process</a></li>
+<li class="chapter" data-level="" data-path="bayesian-non-parametric.html"><a href="bayesian-non-parametric.html#source-32"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-stochastic-volatility.html"><a href="bayesian-stochastic-volatility.html"><i class="fa fa-check"></i>Bayesian Stochastic Volatility Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-stochastic-volatility.html"><a href="bayesian-stochastic-volatility.html#data-setup-31"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-stochastic-volatility.html"><a href="bayesian-stochastic-volatility.html#model-code-8"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-stochastic-volatility.html"><a href="bayesian-stochastic-volatility.html#estimation-30"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-stochastic-volatility.html"><a href="bayesian-stochastic-volatility.html#results"><i class="fa fa-check"></i>Results</a></li>
+<li class="chapter" data-level="" data-path="bayesian-stochastic-volatility.html"><a href="bayesian-stochastic-volatility.html#visualization-3"><i class="fa fa-check"></i>Visualization</a></li>
+<li class="chapter" data-level="" data-path="bayesian-stochastic-volatility.html"><a href="bayesian-stochastic-volatility.html#source-33"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-multinomial-model.html"><a href="bayesian-multinomial-model.html"><i class="fa fa-check"></i>Bayesian Multinomial Models</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-multinomial-model.html"><a href="bayesian-multinomial-model.html#data-setup-32"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-multinomial-model.html"><a href="bayesian-multinomial-model.html#model-code-9"><i class="fa fa-check"></i>Model Code</a></li>
+<li class="chapter" data-level="" data-path="bayesian-multinomial-model.html"><a href="bayesian-multinomial-model.html#estimation-31"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-multinomial-model.html"><a href="bayesian-multinomial-model.html#comparison-36"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-multinomial-model.html"><a href="bayesian-multinomial-model.html#adding-complexity"><i class="fa fa-check"></i>Adding Complexity</a></li>
+<li class="chapter" data-level="" data-path="bayesian-multinomial-model.html"><a href="bayesian-multinomial-model.html#source-34"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-variational.html"><a href="bayesian-variational.html"><i class="fa fa-check"></i>Variational Bayes Regression</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-variational.html"><a href="bayesian-variational.html#data-setup-33"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-variational.html"><a href="bayesian-variational.html#function-19"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="bayesian-variational.html"><a href="bayesian-variational.html#estimation-32"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-variational.html"><a href="bayesian-variational.html#comparison-37"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-variational.html"><a href="bayesian-variational.html#visualization-4"><i class="fa fa-check"></i>Visualization</a></li>
+<li class="chapter" data-level="" data-path="bayesian-variational.html"><a href="bayesian-variational.html#supplemental-example-2"><i class="fa fa-check"></i>Supplemental Example</a></li>
+<li class="chapter" data-level="" data-path="bayesian-variational.html"><a href="bayesian-variational.html#source-35"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-topic-model.html"><a href="bayesian-topic-model.html"><i class="fa fa-check"></i>Topic Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="bayesian-topic-model.html"><a href="bayesian-topic-model.html#data-setup-34"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="bayesian-topic-model.html"><a href="bayesian-topic-model.html#function-20"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="bayesian-topic-model.html"><a href="bayesian-topic-model.html#estimation-33"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="bayesian-topic-model.html"><a href="bayesian-topic-model.html#comparison-38"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="bayesian-topic-model.html"><a href="bayesian-topic-model.html#source-36"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="part"><span><b>Estimation</b></span></li>
+<li class="chapter" data-level="" data-path="maximum-likelihood.html"><a href="maximum-likelihood.html"><i class="fa fa-check"></i>Maximum Likelihood</a>
+<ul>
+<li class="chapter" data-level="" data-path="maximum-likelihood.html"><a href="maximum-likelihood.html#example-4"><i class="fa fa-check"></i>Example</a></li>
+<li class="chapter" data-level="" data-path="maximum-likelihood.html"><a href="maximum-likelihood.html#linear-model"><i class="fa fa-check"></i>Linear Model</a></li>
+<li class="chapter" data-level="" data-path="maximum-likelihood.html"><a href="maximum-likelihood.html#source-37"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html"><i class="fa fa-check"></i>Penalized Maximum Likelihood</a>
+<ul>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#introduction-2"><i class="fa fa-check"></i>Introduction</a>
+<ul>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#data-setup-35"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#functions-8"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#estimation-34"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#comparison-39"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#source-38"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#l1-lasso-regularization"><i class="fa fa-check"></i>L1 (lasso) regularization</a>
+<ul>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#data-setup-36"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#function-21"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#estimation-35"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#comparison-40"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#source-39"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#l2-ridge-regularization"><i class="fa fa-check"></i>L2 (ridge) regularization</a>
+<ul>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#data-setup-37"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#function-22"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#estimation-36"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#comparison-41"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="penalized-maximum-likelihood.html"><a href="penalized-maximum-likelihood.html#source-40"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="newton-irls.html"><a href="newton-irls.html"><i class="fa fa-check"></i>Newton and IRLS</a>
+<ul>
+<li class="chapter" data-level="" data-path="newton-irls.html"><a href="newton-irls.html#data-setup-38"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="newton-irls.html"><a href="newton-irls.html#functions-9"><i class="fa fa-check"></i>Functions</a>
+<ul>
+<li class="chapter" data-level="" data-path="newton-irls.html"><a href="newton-irls.html#newtons-method"><i class="fa fa-check"></i>Newton’s Method</a></li>
+<li class="chapter" data-level="" data-path="newton-irls.html"><a href="newton-irls.html#irls"><i class="fa fa-check"></i>IRLS</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="newton-irls.html"><a href="newton-irls.html#estimation-37"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="newton-irls.html"><a href="newton-irls.html#comparison-42"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="newton-irls.html"><a href="newton-irls.html#source-41"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html"><i class="fa fa-check"></i>Nelder-Mead</a>
+<ul>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html#functions-10"><i class="fa fa-check"></i>Functions</a>
+<ul>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html#first-version"><i class="fa fa-check"></i>First Version</a></li>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html#example-5"><i class="fa fa-check"></i>Example</a></li>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html#a-regression-model"><i class="fa fa-check"></i>A Regression Model</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html#second-version"><i class="fa fa-check"></i>Second Version</a>
+<ul>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html#example-6"><i class="fa fa-check"></i>Example</a></li>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html#a-regression-model-1"><i class="fa fa-check"></i>A Regression Model</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="nelder-mead.html"><a href="nelder-mead.html#source-42"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html"><i class="fa fa-check"></i>Expectation-Maximization</a>
+<ul>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#mixture-model"><i class="fa fa-check"></i>Mixture Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#data-setup-40"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#function-23"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#estimation-38"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#comparison-45"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#visualization-5"><i class="fa fa-check"></i>Visualization</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#supplemental-example-3"><i class="fa fa-check"></i>Supplemental Example</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#source-43"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#multivariate-mixture-model"><i class="fa fa-check"></i>Multivariate Mixture Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#function-24"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#example-1-old-faithful"><i class="fa fa-check"></i>Example 1: Old Faithful</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#example-2-iris"><i class="fa fa-check"></i>Example 2: Iris</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#source-44"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#probit-model"><i class="fa fa-check"></i>Probit Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#data-setup-43"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#probit-via-maximum-likelihood"><i class="fa fa-check"></i>Probit via Maximum Likelihood</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#em-for-latent-variable-approach-to-probit"><i class="fa fa-check"></i>EM for Latent Variable Approach to Probit</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#source-45"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#pca"><i class="fa fa-check"></i>PCA</a>
+<ul>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#data-setup-44"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#function-27"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#estimation-43"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#comparison-50"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#visualize-4"><i class="fa fa-check"></i>Visualize</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#source-46"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#probabilistic-pca"><i class="fa fa-check"></i>Probabilistic PCA</a>
+<ul>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#data-setup-45"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#function-28"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#estimation-44"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#comparison-51"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#visualize-5"><i class="fa fa-check"></i>Visualize</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#missing-data-example"><i class="fa fa-check"></i>Missing Data Example</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#source-47"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#state-space-model"><i class="fa fa-check"></i>State Space Model</a>
+<ul>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#data-setup-47"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#function-30"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#estimation-46"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#visualization-6"><i class="fa fa-check"></i>Visualization</a></li>
+<li class="chapter" data-level="" data-path="em.html"><a href="em.html#source-48"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="gradient-descent.html"><a href="gradient-descent.html"><i class="fa fa-check"></i>Gradient Descent</a>
+<ul>
+<li class="chapter" data-level="" data-path="gradient-descent.html"><a href="gradient-descent.html#data-setup-48"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="gradient-descent.html"><a href="gradient-descent.html#function-31"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="gradient-descent.html"><a href="gradient-descent.html#estimation-47"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="gradient-descent.html"><a href="gradient-descent.html#comparison-53"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="gradient-descent.html"><a href="gradient-descent.html#source-49"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html"><i class="fa fa-check"></i>Stochastic Gradient Descent</a>
+<ul>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#data-setup-49"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#function-32"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#estimation-48"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#comparison-54"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#visualize-estimates"><i class="fa fa-check"></i>Visualize Estimates</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#data-set-shift"><i class="fa fa-check"></i>Data Set Shift</a>
+<ul>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#data-setup-50"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#estimation-49"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#comparison-55"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#visualize-estimates-1"><i class="fa fa-check"></i>Visualize Estimates</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#sgd-variants"><i class="fa fa-check"></i>SGD Variants</a>
+<ul>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#data-setup-51"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#function-33"><i class="fa fa-check"></i>Function</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#estimation-50"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#comparison-56"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#visualize-estimates-2"><i class="fa fa-check"></i>Visualize Estimates</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="stochastic-gradient-descent.html"><a href="stochastic-gradient-descent.html#source-50"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="metropolis-hastings.html"><a href="metropolis-hastings.html"><i class="fa fa-check"></i>Metropolis Hastings</a>
+<ul>
+<li class="chapter" data-level="" data-path="metropolis-hastings.html"><a href="metropolis-hastings.html#data-setup-52"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="metropolis-hastings.html"><a href="metropolis-hastings.html#functions-11"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="metropolis-hastings.html"><a href="metropolis-hastings.html#estimation-51"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="metropolis-hastings.html"><a href="metropolis-hastings.html#comparison-57"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="metropolis-hastings.html"><a href="metropolis-hastings.html#source-51"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="hamiltonian-monte-carlo.html"><a href="hamiltonian-monte-carlo.html"><i class="fa fa-check"></i>Hamiltonian Monte Carlo</a>
+<ul>
+<li class="chapter" data-level="" data-path="hamiltonian-monte-carlo.html"><a href="hamiltonian-monte-carlo.html#data-setup-53"><i class="fa fa-check"></i>Data Setup</a></li>
+<li class="chapter" data-level="" data-path="hamiltonian-monte-carlo.html"><a href="hamiltonian-monte-carlo.html#functions-12"><i class="fa fa-check"></i>Functions</a></li>
+<li class="chapter" data-level="" data-path="hamiltonian-monte-carlo.html"><a href="hamiltonian-monte-carlo.html#estimation-52"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="hamiltonian-monte-carlo.html"><a href="hamiltonian-monte-carlo.html#comparison-58"><i class="fa fa-check"></i>Comparison</a></li>
+<li class="chapter" data-level="" data-path="hamiltonian-monte-carlo.html"><a href="hamiltonian-monte-carlo.html#source-52"><i class="fa fa-check"></i>Source</a></li>
+</ul></li>
+<li class="part"><span><b>Other</b></span></li>
+<li class="chapter" data-level="" data-path="supplemental.html"><a href="supplemental.html"><i class="fa fa-check"></i>Supplemental</a>
+<ul>
+<li class="chapter" data-level="" data-path="supplemental.html"><a href="supplemental.html#other-languages"><i class="fa fa-check"></i>Other Languages</a>
+<ul>
+<li class="chapter" data-level="" data-path="supplemental.html"><a href="supplemental.html#python-demos"><i class="fa fa-check"></i>Python Demos</a></li>
+<li class="chapter" data-level="" data-path="supplemental.html"><a href="supplemental.html#julia-demos"><i class="fa fa-check"></i>Julia Demos</a></li>
+<li class="chapter" data-level="" data-path="supplemental.html"><a href="supplemental.html#matlab-demos"><i class="fa fa-check"></i>Matlab Demos</a></li>
+</ul></li>
+</ul></li>
+<li class="divider"></li>
+<li class='after'">
+   <a href="https://m-clark.github.io/">
+      <img src="img/mc_logo.png" style="width:25%; padding:0px 0; display:block; margin: 0 auto;" alt="MC logo">
+   </a>
+</li>
+<li class='after'">
+   <div style='text-align:center'>
+      <a href="https://github.com/m-clark/">
+         <i class="fab fa-github fa-2x" aria-hidden="true"></i>
+      </a>
+   </div>
+</li>
+<li class='after'">
+   <div style='text-align:center'>
+      <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">
+         <i class="fab fa-creative-commons fa-lg"></i>
+         <i class="fab fa-creative-commons-by fa-lg"></i>
+         <i class="fab fa-creative-commons-sa fa-lg"></i>
+      </a>
+   </div>
+</li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Model Estimation by Example</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="nelder-mead" class="section level1">
+<h1>Nelder-Mead</h1>
+<p>This is based on the pure <a href="https://github.com/fchollet/nelder-mead">Python implementation by François
+Chollet</a>, also found in the
+<a href="supplemental.html#python-nelder">supplemental section</a>. This is mostly just an academic exercise
+on my part. I’m not sure how much one would use the basic NM for many
+situations. In my experience BFGS and other approaches would be faster, more
+accurate, and less sensitive to starting values for the types of problems I’ve
+played around with. Others who actually spend their time researching such things
+seem to agree.</p>
+<p>There were two issues regarding the original code on
+<a href="https://github.com/fchollet/nelder-mead/issues/2">GitHub</a>, and I’ve implemented
+the suggested corrections with notes. The initial R function code is not very
+R-like, as the goal was to keep more similar to the original Python for
+comparison, which used a list approach. I also provide a more R-like/cleaner
+version that uses matrices instead of lists, but which still sticks the same
+approach for the most part.
+For both functions, comparisons are made using the <span class="pack" style="">optimx</span> package, but feel free to use base R’s <span class="func" style="">optim</span> instead.</p>
+<div id="functions-10" class="section level2">
+<h2>Functions</h2>
+<div id="first-version" class="section level3">
+<h3>First Version</h3>
+<ul>
+<li><code>f</code> function to optimize, must return a scalar score and operate over
+an array of the same dimensions as x_start</li>
+<li><code>x_start</code> initial position</li>
+<li><code>step</code> look-around radius in initial step</li>
+<li><code>no_improve_thr</code> See no_improv_break</li>
+<li><code>no_improv_break</code> break after no_improv_break iterations with an
+improvement lower than no_improv_thr</li>
+<li><code>max_iter</code> always break after this number of iterations. Set it to 0 to
+loop indefinitely.</li>
+<li><code>alpha</code> parameters of the algorithm (see Wikipedia page for reference)</li>
+<li><code>gamma</code> parameters of the algorithm (see Wikipedia page for reference)</li>
+<li><code>rho</code> parameters of the algorithm (see Wikipedia page for reference)</li>
+<li><code>sigma</code> parameters of the algorithm (see Wikipedia page for reference)</li>
+<li><code>verbose</code> Print iterations?</li>
+</ul>
+<p>This function returns the best parameter array and best score.</p>
+<div class="sourceCode" id="cb662"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb662-1"><a href="nelder-mead.html#cb662-1" aria-hidden="true" tabindex="-1"></a>nelder_mead <span class="ot">&lt;-</span> <span class="cf">function</span>(</span>
+<span id="cb662-2"><a href="nelder-mead.html#cb662-2" aria-hidden="true" tabindex="-1"></a>  f, </span>
+<span id="cb662-3"><a href="nelder-mead.html#cb662-3" aria-hidden="true" tabindex="-1"></a>  x_start,</span>
+<span id="cb662-4"><a href="nelder-mead.html#cb662-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">step =</span> <span class="fl">0.1</span>,</span>
+<span id="cb662-5"><a href="nelder-mead.html#cb662-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_improve_thr  =</span> <span class="fl">1e-12</span>,</span>
+<span id="cb662-6"><a href="nelder-mead.html#cb662-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_improv_break =</span> <span class="dv">10</span>,</span>
+<span id="cb662-7"><a href="nelder-mead.html#cb662-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_iter =</span> <span class="dv">0</span>,</span>
+<span id="cb662-8"><a href="nelder-mead.html#cb662-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha    =</span> <span class="dv">1</span>,</span>
+<span id="cb662-9"><a href="nelder-mead.html#cb662-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">gamma    =</span> <span class="dv">2</span>,</span>
+<span id="cb662-10"><a href="nelder-mead.html#cb662-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">rho      =</span> <span class="fl">0.5</span>,</span>
+<span id="cb662-11"><a href="nelder-mead.html#cb662-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">sigma    =</span> <span class="fl">0.5</span>,</span>
+<span id="cb662-12"><a href="nelder-mead.html#cb662-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose  =</span> <span class="cn">FALSE</span></span>
+<span id="cb662-13"><a href="nelder-mead.html#cb662-13" aria-hidden="true" tabindex="-1"></a>  ) {</span>
+<span id="cb662-14"><a href="nelder-mead.html#cb662-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># init</span></span>
+<span id="cb662-15"><a href="nelder-mead.html#cb662-15" aria-hidden="true" tabindex="-1"></a>  dim <span class="ot">=</span> <span class="fu">length</span>(x_start)</span>
+<span id="cb662-16"><a href="nelder-mead.html#cb662-16" aria-hidden="true" tabindex="-1"></a>  prev_best <span class="ot">=</span> <span class="fu">f</span>(x_start)</span>
+<span id="cb662-17"><a href="nelder-mead.html#cb662-17" aria-hidden="true" tabindex="-1"></a>  no_improv <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb662-18"><a href="nelder-mead.html#cb662-18" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">=</span> <span class="fu">list</span>(<span class="fu">list</span>(<span class="at">x_start =</span> x_start, <span class="at">prev_best =</span> prev_best))</span>
+<span id="cb662-19"><a href="nelder-mead.html#cb662-19" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb662-20"><a href="nelder-mead.html#cb662-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb662-21"><a href="nelder-mead.html#cb662-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>dim) {</span>
+<span id="cb662-22"><a href="nelder-mead.html#cb662-22" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">=</span> x_start</span>
+<span id="cb662-23"><a href="nelder-mead.html#cb662-23" aria-hidden="true" tabindex="-1"></a>    x[i]  <span class="ot">=</span> x[i] <span class="sc">+</span> step</span>
+<span id="cb662-24"><a href="nelder-mead.html#cb662-24" aria-hidden="true" tabindex="-1"></a>    score <span class="ot">=</span> <span class="fu">f</span>(x)</span>
+<span id="cb662-25"><a href="nelder-mead.html#cb662-25" aria-hidden="true" tabindex="-1"></a>    res <span class="ot">=</span> <span class="fu">append</span>(res, <span class="fu">list</span>(<span class="fu">list</span>(<span class="at">x_start =</span> x, <span class="at">prev_best =</span> score)))</span>
+<span id="cb662-26"><a href="nelder-mead.html#cb662-26" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb662-27"><a href="nelder-mead.html#cb662-27" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb662-28"><a href="nelder-mead.html#cb662-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># simplex iter</span></span>
+<span id="cb662-29"><a href="nelder-mead.html#cb662-29" aria-hidden="true" tabindex="-1"></a>  iters <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb662-30"><a href="nelder-mead.html#cb662-30" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb662-31"><a href="nelder-mead.html#cb662-31" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="cn">TRUE</span>) {</span>
+<span id="cb662-32"><a href="nelder-mead.html#cb662-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># order</span></span>
+<span id="cb662-33"><a href="nelder-mead.html#cb662-33" aria-hidden="true" tabindex="-1"></a>    idx  <span class="ot">=</span> <span class="fu">sapply</span>(res, <span class="st">`</span><span class="at">[[</span><span class="st">`</span>, <span class="dv">2</span>)</span>
+<span id="cb662-34"><a href="nelder-mead.html#cb662-34" aria-hidden="true" tabindex="-1"></a>    res  <span class="ot">=</span> res[<span class="fu">order</span>(idx)]   <span class="co"># ascending order</span></span>
+<span id="cb662-35"><a href="nelder-mead.html#cb662-35" aria-hidden="true" tabindex="-1"></a>    best <span class="ot">=</span> res[[<span class="dv">1</span>]][[<span class="dv">2</span>]]</span>
+<span id="cb662-36"><a href="nelder-mead.html#cb662-36" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb662-37"><a href="nelder-mead.html#cb662-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># break after max_iter</span></span>
+<span id="cb662-38"><a href="nelder-mead.html#cb662-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (max_iter <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> iters <span class="sc">&gt;=</span> max_iter) <span class="fu">return</span>(res[[<span class="dv">1</span>]])</span>
+<span id="cb662-39"><a href="nelder-mead.html#cb662-39" aria-hidden="true" tabindex="-1"></a>    iters <span class="ot">=</span> iters <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb662-40"><a href="nelder-mead.html#cb662-40" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb662-41"><a href="nelder-mead.html#cb662-41" aria-hidden="true" tabindex="-1"></a>    <span class="co"># break after no_improv_break iterations with no improvement</span></span>
+<span id="cb662-42"><a href="nelder-mead.html#cb662-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (verbose) <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">&#39;...best so far:&#39;</span>, best))</span>
+<span id="cb662-43"><a href="nelder-mead.html#cb662-43" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb662-44"><a href="nelder-mead.html#cb662-44" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (best <span class="sc">&lt;</span> (prev_best <span class="sc">-</span> no_improve_thr)) {</span>
+<span id="cb662-45"><a href="nelder-mead.html#cb662-45" aria-hidden="true" tabindex="-1"></a>      no_improv <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb662-46"><a href="nelder-mead.html#cb662-46" aria-hidden="true" tabindex="-1"></a>      prev_best <span class="ot">=</span> best</span>
+<span id="cb662-47"><a href="nelder-mead.html#cb662-47" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb662-48"><a href="nelder-mead.html#cb662-48" aria-hidden="true" tabindex="-1"></a>      no_improv <span class="ot">=</span> no_improv <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb662-49"><a href="nelder-mead.html#cb662-49" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb662-50"><a href="nelder-mead.html#cb662-50" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb662-51"><a href="nelder-mead.html#cb662-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (no_improv <span class="sc">&gt;=</span> no_improv_break) <span class="fu">return</span>(res[[<span class="dv">1</span>]])</span>
+<span id="cb662-52"><a href="nelder-mead.html#cb662-52" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb662-53"><a href="nelder-mead.html#cb662-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># centroid</span></span>
+<span id="cb662-54"><a href="nelder-mead.html#cb662-54" aria-hidden="true" tabindex="-1"></a>    x0 <span class="ot">=</span> <span class="fu">rep</span>(<span class="dv">0</span>, dim)</span>
+<span id="cb662-55"><a href="nelder-mead.html#cb662-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (tup <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(<span class="fu">length</span>(res)<span class="sc">-</span><span class="dv">1</span>)) {</span>
+<span id="cb662-56"><a href="nelder-mead.html#cb662-56" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>dim) {</span>
+<span id="cb662-57"><a href="nelder-mead.html#cb662-57" aria-hidden="true" tabindex="-1"></a>        x0[i] <span class="ot">=</span> x0[i] <span class="sc">+</span> res[[tup]][[<span class="dv">1</span>]][i] <span class="sc">/</span> (<span class="fu">length</span>(res)<span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb662-58"><a href="nelder-mead.html#cb662-58" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb662-59"><a href="nelder-mead.html#cb662-59" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb662-60"><a href="nelder-mead.html#cb662-60" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb662-61"><a href="nelder-mead.html#cb662-61" aria-hidden="true" tabindex="-1"></a>   <span class="co"># reflection</span></span>
+<span id="cb662-62"><a href="nelder-mead.html#cb662-62" aria-hidden="true" tabindex="-1"></a>   xr <span class="ot">=</span> x0 <span class="sc">+</span> alpha <span class="sc">*</span> (x0 <span class="sc">-</span> res[[<span class="fu">length</span>(res)]][[<span class="dv">1</span>]])</span>
+<span id="cb662-63"><a href="nelder-mead.html#cb662-63" aria-hidden="true" tabindex="-1"></a>   rscore <span class="ot">=</span> <span class="fu">f</span>(xr)</span>
+<span id="cb662-64"><a href="nelder-mead.html#cb662-64" aria-hidden="true" tabindex="-1"></a>   <span class="cf">if</span> (res[[<span class="dv">1</span>]][[<span class="dv">2</span>]] <span class="sc">&lt;=</span> rscore <span class="sc">&amp;</span> </span>
+<span id="cb662-65"><a href="nelder-mead.html#cb662-65" aria-hidden="true" tabindex="-1"></a>       rscore <span class="sc">&lt;</span> res[[<span class="fu">length</span>(res)<span class="sc">-</span><span class="dv">1</span>]][[<span class="dv">2</span>]]) {</span>
+<span id="cb662-66"><a href="nelder-mead.html#cb662-66" aria-hidden="true" tabindex="-1"></a>     res[[<span class="fu">length</span>(res)]] <span class="ot">=</span> <span class="fu">list</span>(xr, rscore)</span>
+<span id="cb662-67"><a href="nelder-mead.html#cb662-67" aria-hidden="true" tabindex="-1"></a>     <span class="cf">next</span></span>
+<span id="cb662-68"><a href="nelder-mead.html#cb662-68" aria-hidden="true" tabindex="-1"></a>   }</span>
+<span id="cb662-69"><a href="nelder-mead.html#cb662-69" aria-hidden="true" tabindex="-1"></a>     </span>
+<span id="cb662-70"><a href="nelder-mead.html#cb662-70" aria-hidden="true" tabindex="-1"></a>   <span class="co"># expansion</span></span>
+<span id="cb662-71"><a href="nelder-mead.html#cb662-71" aria-hidden="true" tabindex="-1"></a>   <span class="cf">if</span> (rscore <span class="sc">&lt;</span> res[[<span class="dv">1</span>]][[<span class="dv">2</span>]]) {</span>
+<span id="cb662-72"><a href="nelder-mead.html#cb662-72" aria-hidden="true" tabindex="-1"></a>     <span class="co"># xe = x0 + gamma*(x0 - res[[length(res)]][[1]])   # issue with this</span></span>
+<span id="cb662-73"><a href="nelder-mead.html#cb662-73" aria-hidden="true" tabindex="-1"></a>     xe <span class="ot">=</span> x0 <span class="sc">+</span> gamma <span class="sc">*</span> (xr <span class="sc">-</span> x0)   </span>
+<span id="cb662-74"><a href="nelder-mead.html#cb662-74" aria-hidden="true" tabindex="-1"></a>     escore <span class="ot">=</span> <span class="fu">f</span>(xe)</span>
+<span id="cb662-75"><a href="nelder-mead.html#cb662-75" aria-hidden="true" tabindex="-1"></a>     <span class="cf">if</span> (escore <span class="sc">&lt;</span> rscore) {</span>
+<span id="cb662-76"><a href="nelder-mead.html#cb662-76" aria-hidden="true" tabindex="-1"></a>       res[[<span class="fu">length</span>(res)]] <span class="ot">=</span> <span class="fu">list</span>(xe, escore)</span>
+<span id="cb662-77"><a href="nelder-mead.html#cb662-77" aria-hidden="true" tabindex="-1"></a>       <span class="cf">next</span></span>
+<span id="cb662-78"><a href="nelder-mead.html#cb662-78" aria-hidden="true" tabindex="-1"></a>     } <span class="cf">else</span> {</span>
+<span id="cb662-79"><a href="nelder-mead.html#cb662-79" aria-hidden="true" tabindex="-1"></a>       res[[<span class="fu">length</span>(res)]] <span class="ot">=</span> <span class="fu">list</span>(xr, rscore)</span>
+<span id="cb662-80"><a href="nelder-mead.html#cb662-80" aria-hidden="true" tabindex="-1"></a>       <span class="cf">next</span></span>
+<span id="cb662-81"><a href="nelder-mead.html#cb662-81" aria-hidden="true" tabindex="-1"></a>     }</span>
+<span id="cb662-82"><a href="nelder-mead.html#cb662-82" aria-hidden="true" tabindex="-1"></a>   }</span>
+<span id="cb662-83"><a href="nelder-mead.html#cb662-83" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb662-84"><a href="nelder-mead.html#cb662-84" aria-hidden="true" tabindex="-1"></a>   <span class="co"># contraction</span></span>
+<span id="cb662-85"><a href="nelder-mead.html#cb662-85" aria-hidden="true" tabindex="-1"></a>   <span class="co"># xc = x0 + rho*(x0 - res[[length(res)]][[1]])  # issue with wiki consistency for rho values (and optim)</span></span>
+<span id="cb662-86"><a href="nelder-mead.html#cb662-86" aria-hidden="true" tabindex="-1"></a>   xc <span class="ot">=</span> x0 <span class="sc">+</span> rho <span class="sc">*</span> (res[[<span class="fu">length</span>(res)]][[<span class="dv">1</span>]] <span class="sc">-</span> x0)</span>
+<span id="cb662-87"><a href="nelder-mead.html#cb662-87" aria-hidden="true" tabindex="-1"></a>   cscore <span class="ot">=</span> <span class="fu">f</span>(xc)</span>
+<span id="cb662-88"><a href="nelder-mead.html#cb662-88" aria-hidden="true" tabindex="-1"></a>   <span class="cf">if</span> (cscore <span class="sc">&lt;</span> res[[<span class="fu">length</span>(res)]][[<span class="dv">2</span>]]) {</span>
+<span id="cb662-89"><a href="nelder-mead.html#cb662-89" aria-hidden="true" tabindex="-1"></a>     res[[<span class="fu">length</span>(res)]] <span class="ot">=</span> <span class="fu">list</span>(xc, cscore)</span>
+<span id="cb662-90"><a href="nelder-mead.html#cb662-90" aria-hidden="true" tabindex="-1"></a>     <span class="cf">next</span></span>
+<span id="cb662-91"><a href="nelder-mead.html#cb662-91" aria-hidden="true" tabindex="-1"></a>   }</span>
+<span id="cb662-92"><a href="nelder-mead.html#cb662-92" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb662-93"><a href="nelder-mead.html#cb662-93" aria-hidden="true" tabindex="-1"></a>   <span class="co"># reduction</span></span>
+<span id="cb662-94"><a href="nelder-mead.html#cb662-94" aria-hidden="true" tabindex="-1"></a>   x1   <span class="ot">=</span> res[[<span class="dv">1</span>]][[<span class="dv">1</span>]]</span>
+<span id="cb662-95"><a href="nelder-mead.html#cb662-95" aria-hidden="true" tabindex="-1"></a>   nres <span class="ot">=</span> <span class="fu">list</span>()</span>
+<span id="cb662-96"><a href="nelder-mead.html#cb662-96" aria-hidden="true" tabindex="-1"></a>   <span class="cf">for</span> (tup <span class="cf">in</span> res) {</span>
+<span id="cb662-97"><a href="nelder-mead.html#cb662-97" aria-hidden="true" tabindex="-1"></a>     redx  <span class="ot">=</span> x1 <span class="sc">+</span> sigma <span class="sc">*</span> (tup[[<span class="dv">1</span>]] <span class="sc">-</span> x1)</span>
+<span id="cb662-98"><a href="nelder-mead.html#cb662-98" aria-hidden="true" tabindex="-1"></a>     score <span class="ot">=</span> <span class="fu">f</span>(redx)</span>
+<span id="cb662-99"><a href="nelder-mead.html#cb662-99" aria-hidden="true" tabindex="-1"></a>     nres  <span class="ot">=</span> <span class="fu">append</span>(nres, <span class="fu">list</span>(<span class="fu">list</span>(redx, score)))</span>
+<span id="cb662-100"><a href="nelder-mead.html#cb662-100" aria-hidden="true" tabindex="-1"></a>   }</span>
+<span id="cb662-101"><a href="nelder-mead.html#cb662-101" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb662-102"><a href="nelder-mead.html#cb662-102" aria-hidden="true" tabindex="-1"></a>   res <span class="ot">=</span> nres</span>
+<span id="cb662-103"><a href="nelder-mead.html#cb662-103" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb662-104"><a href="nelder-mead.html#cb662-104" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb662-105"><a href="nelder-mead.html#cb662-105" aria-hidden="true" tabindex="-1"></a>  res</span>
+<span id="cb662-106"><a href="nelder-mead.html#cb662-106" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="example-5" class="section level3">
+<h3>Example</h3>
+<p>The function to minimize.</p>
+<div class="sourceCode" id="cb663"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb663-1"><a href="nelder-mead.html#cb663-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">=</span> <span class="cf">function</span>(x) {</span>
+<span id="cb663-2"><a href="nelder-mead.html#cb663-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sin</span>(x[<span class="dv">1</span>]) <span class="sc">*</span> <span class="fu">cos</span>(x[<span class="dv">2</span>]) <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">/</span> (<span class="fu">abs</span>(x[<span class="dv">3</span>]) <span class="sc">+</span> <span class="dv">1</span>))</span>
+<span id="cb663-3"><a href="nelder-mead.html#cb663-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Estimate.</p>
+<div class="sourceCode" id="cb664"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb664-1"><a href="nelder-mead.html#cb664-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nelder_mead</span>(</span>
+<span id="cb664-2"><a href="nelder-mead.html#cb664-2" aria-hidden="true" tabindex="-1"></a>  f, </span>
+<span id="cb664-3"><a href="nelder-mead.html#cb664-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>), </span>
+<span id="cb664-4"><a href="nelder-mead.html#cb664-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_iter =</span> <span class="dv">1000</span>, </span>
+<span id="cb664-5"><a href="nelder-mead.html#cb664-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_improve_thr =</span> <span class="fl">1e-12</span></span>
+<span id="cb664-6"><a href="nelder-mead.html#cb664-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<pre><code>[[1]]
+[1] -1.570797e+00 -2.235577e-07  1.637460e-14
+
+[[2]]
+[1] -1</code></pre>
+<p>Compare to <span class="pack" style="">optimx</span>. You may see warnings.</p>
+<div class="sourceCode" id="cb666"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb666-1"><a href="nelder-mead.html#cb666-1" aria-hidden="true" tabindex="-1"></a>optimx<span class="sc">::</span><span class="fu">optimx</span>(</span>
+<span id="cb666-2"><a href="nelder-mead.html#cb666-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">par =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb666-3"><a href="nelder-mead.html#cb666-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">fn =</span> f,</span>
+<span id="cb666-4"><a href="nelder-mead.html#cb666-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;Nelder-Mead&quot;</span>,</span>
+<span id="cb666-5"><a href="nelder-mead.html#cb666-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(</span>
+<span id="cb666-6"><a href="nelder-mead.html#cb666-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha  =</span> <span class="dv">1</span>,</span>
+<span id="cb666-7"><a href="nelder-mead.html#cb666-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">gamma  =</span> <span class="dv">2</span>,</span>
+<span id="cb666-8"><a href="nelder-mead.html#cb666-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">beta   =</span> <span class="fl">0.5</span>,</span>
+<span id="cb666-9"><a href="nelder-mead.html#cb666-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">maxit  =</span> <span class="dv">1000</span>,</span>
+<span id="cb666-10"><a href="nelder-mead.html#cb666-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">reltol =</span> <span class="fl">1e-12</span></span>
+<span id="cb666-11"><a href="nelder-mead.html#cb666-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb666-12"><a href="nelder-mead.html#cb666-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<pre><code>                   p1           p2           p3 value fevals gevals niter convcode kkt1 kkt2 xtime
+Nelder-Mead -1.570796 1.394018e-08 1.088215e-16    -1    861     NA    NA        0 TRUE TRUE     0</code></pre>
+</div>
+<div id="a-regression-model" class="section level3">
+<h3>A Regression Model</h3>
+<p>I find a regression model to be more applicable/intuitive for my needs, so
+provide an example for that case.</p>
+<div id="data-setup-39" class="section level4">
+<h4>Data Setup</h4>
+<div class="sourceCode" id="cb668"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb668-1"><a href="nelder-mead.html#cb668-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb668-2"><a href="nelder-mead.html#cb668-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb668-3"><a href="nelder-mead.html#cb668-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">8675309</span>)</span>
+<span id="cb668-4"><a href="nelder-mead.html#cb668-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb668-5"><a href="nelder-mead.html#cb668-5" aria-hidden="true" tabindex="-1"></a>N <span class="ot">=</span> <span class="dv">500</span></span>
+<span id="cb668-6"><a href="nelder-mead.html#cb668-6" aria-hidden="true" tabindex="-1"></a>n_preds <span class="ot">=</span> <span class="dv">5</span>  <span class="co"># number of predictors</span></span>
+<span id="cb668-7"><a href="nelder-mead.html#cb668-7" aria-hidden="true" tabindex="-1"></a>X <span class="ot">=</span> <span class="fu">cbind</span>(<span class="dv">1</span>, <span class="fu">matrix</span>(<span class="fu">rnorm</span>(N <span class="sc">*</span> n_preds), <span class="at">ncol =</span> n_preds))</span>
+<span id="cb668-8"><a href="nelder-mead.html#cb668-8" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">=</span> <span class="fu">runif</span>(<span class="fu">ncol</span>(X), <span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb668-9"><a href="nelder-mead.html#cb668-9" aria-hidden="true" tabindex="-1"></a>y <span class="ot">=</span> X <span class="sc">%*%</span> beta <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="fu">nrow</span>(X))</span></code></pre></div>
+<p>Least squares loss function to minimize.</p>
+<div class="sourceCode" id="cb669"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb669-1"><a href="nelder-mead.html#cb669-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">=</span> <span class="cf">function</span>(b) {</span>
+<span id="cb669-2"><a href="nelder-mead.html#cb669-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">crossprod</span>(y <span class="sc">-</span> X <span class="sc">%*%</span> b)[,<span class="dv">1</span>]  <span class="co"># if using optimx need scalar</span></span>
+<span id="cb669-3"><a href="nelder-mead.html#cb669-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb670"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb670-1"><a href="nelder-mead.html#cb670-1" aria-hidden="true" tabindex="-1"></a>fit_nm <span class="ot">=</span> <span class="fu">nelder_mead</span>(</span>
+<span id="cb670-2"><a href="nelder-mead.html#cb670-2" aria-hidden="true" tabindex="-1"></a>  f, </span>
+<span id="cb670-3"><a href="nelder-mead.html#cb670-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">runif</span>(<span class="fu">ncol</span>(X)), </span>
+<span id="cb670-4"><a href="nelder-mead.html#cb670-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_iter =</span> <span class="dv">2000</span>,</span>
+<span id="cb670-5"><a href="nelder-mead.html#cb670-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_improve_thr =</span> <span class="fl">1e-12</span>,</span>
+<span id="cb670-6"><a href="nelder-mead.html#cb670-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb670-7"><a href="nelder-mead.html#cb670-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="comparison-43" class="section level4">
+<h4>Comparison</h4>
+<p>Compare to <span class="pack" style="">optimx</span>.</p>
+<div class="sourceCode" id="cb671"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb671-1"><a href="nelder-mead.html#cb671-1" aria-hidden="true" tabindex="-1"></a>fit_nm_optimx <span class="ot">=</span> optimx<span class="sc">::</span><span class="fu">optimx</span>(</span>
+<span id="cb671-2"><a href="nelder-mead.html#cb671-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">runif</span>(<span class="fu">ncol</span>(X)),</span>
+<span id="cb671-3"><a href="nelder-mead.html#cb671-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">fn =</span> f,  <span class="co"># model function</span></span>
+<span id="cb671-4"><a href="nelder-mead.html#cb671-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">method  =</span> <span class="st">&#39;Nelder-Mead&#39;</span>,</span>
+<span id="cb671-5"><a href="nelder-mead.html#cb671-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(</span>
+<span id="cb671-6"><a href="nelder-mead.html#cb671-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="dv">1</span>,</span>
+<span id="cb671-7"><a href="nelder-mead.html#cb671-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">gamma =</span> <span class="dv">2</span>,</span>
+<span id="cb671-8"><a href="nelder-mead.html#cb671-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">beta  =</span> <span class="fl">0.5</span>,</span>
+<span id="cb671-9"><a href="nelder-mead.html#cb671-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">#rho</span></span>
+<span id="cb671-10"><a href="nelder-mead.html#cb671-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">maxit  =</span> <span class="dv">2000</span>,</span>
+<span id="cb671-11"><a href="nelder-mead.html#cb671-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">reltol =</span> <span class="fl">1e-12</span></span>
+<span id="cb671-12"><a href="nelder-mead.html#cb671-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb671-13"><a href="nelder-mead.html#cb671-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>We’ll add base R <span class="func" style="">lm</span> estimates.</p>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+p1
+</th>
+<th style="text-align:right;">
+p2
+</th>
+<th style="text-align:right;">
+p3
+</th>
+<th style="text-align:right;">
+p4
+</th>
+<th style="text-align:right;">
+p5
+</th>
+<th style="text-align:right;">
+p6
+</th>
+<th style="text-align:right;">
+value
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+nm_func
+</td>
+<td style="text-align:right;">
+-0.962
+</td>
+<td style="text-align:right;">
+0.594
+</td>
+<td style="text-align:right;">
+0.049
+</td>
+<td style="text-align:right;">
+0.276
+</td>
+<td style="text-align:right;">
+0.975
+</td>
+<td style="text-align:right;">
+-0.075
+</td>
+<td style="text-align:right;">
+501.315
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+nm_optimx
+</td>
+<td style="text-align:right;">
+-0.962
+</td>
+<td style="text-align:right;">
+0.594
+</td>
+<td style="text-align:right;">
+0.049
+</td>
+<td style="text-align:right;">
+0.276
+</td>
+<td style="text-align:right;">
+0.975
+</td>
+<td style="text-align:right;">
+-0.075
+</td>
+<td style="text-align:right;">
+501.315
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+lm
+</td>
+<td style="text-align:right;">
+-0.962
+</td>
+<td style="text-align:right;">
+0.594
+</td>
+<td style="text-align:right;">
+0.049
+</td>
+<td style="text-align:right;">
+0.276
+</td>
+<td style="text-align:right;">
+0.975
+</td>
+<td style="text-align:right;">
+-0.075
+</td>
+<td style="text-align:right;">
+501.315
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="second-version" class="section level2">
+<h2>Second Version</h2>
+<p>This is a more natural R approach in my opinion.</p>
+<div class="sourceCode" id="cb672"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb672-1"><a href="nelder-mead.html#cb672-1" aria-hidden="true" tabindex="-1"></a>nelder_mead2 <span class="ot">=</span> <span class="cf">function</span>(</span>
+<span id="cb672-2"><a href="nelder-mead.html#cb672-2" aria-hidden="true" tabindex="-1"></a>  f,</span>
+<span id="cb672-3"><a href="nelder-mead.html#cb672-3" aria-hidden="true" tabindex="-1"></a>  x_start,</span>
+<span id="cb672-4"><a href="nelder-mead.html#cb672-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">step =</span> <span class="fl">0.1</span>,</span>
+<span id="cb672-5"><a href="nelder-mead.html#cb672-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_improve_thr  =</span> <span class="fl">1e-12</span>,</span>
+<span id="cb672-6"><a href="nelder-mead.html#cb672-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_improv_break =</span> <span class="dv">10</span>,</span>
+<span id="cb672-7"><a href="nelder-mead.html#cb672-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_iter =</span> <span class="dv">0</span>,</span>
+<span id="cb672-8"><a href="nelder-mead.html#cb672-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha    =</span> <span class="dv">1</span>,</span>
+<span id="cb672-9"><a href="nelder-mead.html#cb672-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">gamma    =</span> <span class="dv">2</span>,</span>
+<span id="cb672-10"><a href="nelder-mead.html#cb672-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">rho      =</span> <span class="fl">0.5</span>,</span>
+<span id="cb672-11"><a href="nelder-mead.html#cb672-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">sigma    =</span> <span class="fl">0.5</span>,</span>
+<span id="cb672-12"><a href="nelder-mead.html#cb672-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose  =</span> <span class="cn">FALSE</span></span>
+<span id="cb672-13"><a href="nelder-mead.html#cb672-13" aria-hidden="true" tabindex="-1"></a>) {</span>
+<span id="cb672-14"><a href="nelder-mead.html#cb672-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb672-15"><a href="nelder-mead.html#cb672-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># init</span></span>
+<span id="cb672-16"><a href="nelder-mead.html#cb672-16" aria-hidden="true" tabindex="-1"></a>  npar <span class="ot">=</span> <span class="fu">length</span>(x_start)</span>
+<span id="cb672-17"><a href="nelder-mead.html#cb672-17" aria-hidden="true" tabindex="-1"></a>  nc <span class="ot">=</span> npar <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb672-18"><a href="nelder-mead.html#cb672-18" aria-hidden="true" tabindex="-1"></a>  prev_best <span class="ot">=</span> <span class="fu">f</span>(x_start)</span>
+<span id="cb672-19"><a href="nelder-mead.html#cb672-19" aria-hidden="true" tabindex="-1"></a>  no_improv <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb672-20"><a href="nelder-mead.html#cb672-20" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">=</span> <span class="fu">matrix</span>(<span class="fu">c</span>(x_start, prev_best), <span class="at">ncol =</span> nc)</span>
+<span id="cb672-21"><a href="nelder-mead.html#cb672-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(res) <span class="ot">=</span> <span class="fu">c</span>(<span class="fu">paste</span>(<span class="st">&#39;par&#39;</span>, <span class="dv">1</span><span class="sc">:</span>npar, <span class="at">sep =</span> <span class="st">&#39;_&#39;</span>), <span class="st">&#39;score&#39;</span>)</span>
+<span id="cb672-22"><a href="nelder-mead.html#cb672-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb672-23"><a href="nelder-mead.html#cb672-23" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>npar) {</span>
+<span id="cb672-24"><a href="nelder-mead.html#cb672-24" aria-hidden="true" tabindex="-1"></a>    x     <span class="ot">=</span> x_start</span>
+<span id="cb672-25"><a href="nelder-mead.html#cb672-25" aria-hidden="true" tabindex="-1"></a>    x[i]  <span class="ot">=</span> x[i] <span class="sc">+</span> step</span>
+<span id="cb672-26"><a href="nelder-mead.html#cb672-26" aria-hidden="true" tabindex="-1"></a>    score <span class="ot">=</span> <span class="fu">f</span>(x)</span>
+<span id="cb672-27"><a href="nelder-mead.html#cb672-27" aria-hidden="true" tabindex="-1"></a>    res   <span class="ot">=</span> <span class="fu">rbind</span>(res, <span class="fu">c</span>(x, score))</span>
+<span id="cb672-28"><a href="nelder-mead.html#cb672-28" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb672-29"><a href="nelder-mead.html#cb672-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb672-30"><a href="nelder-mead.html#cb672-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># simplex iter</span></span>
+<span id="cb672-31"><a href="nelder-mead.html#cb672-31" aria-hidden="true" tabindex="-1"></a>  iters <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb672-32"><a href="nelder-mead.html#cb672-32" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb672-33"><a href="nelder-mead.html#cb672-33" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (<span class="cn">TRUE</span>) {</span>
+<span id="cb672-34"><a href="nelder-mead.html#cb672-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># order</span></span>
+<span id="cb672-35"><a href="nelder-mead.html#cb672-35" aria-hidden="true" tabindex="-1"></a>    res  <span class="ot">=</span> res[<span class="fu">order</span>(res[, nc]), ]   <span class="co"># ascending order</span></span>
+<span id="cb672-36"><a href="nelder-mead.html#cb672-36" aria-hidden="true" tabindex="-1"></a>    best <span class="ot">=</span> res[<span class="dv">1</span>, nc]</span>
+<span id="cb672-37"><a href="nelder-mead.html#cb672-37" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-38"><a href="nelder-mead.html#cb672-38" aria-hidden="true" tabindex="-1"></a>    <span class="co"># break after max_iter</span></span>
+<span id="cb672-39"><a href="nelder-mead.html#cb672-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (max_iter <span class="sc">&amp;</span> iters <span class="sc">&gt;=</span> max_iter) <span class="fu">return</span>(res[<span class="dv">1</span>, ])</span>
+<span id="cb672-40"><a href="nelder-mead.html#cb672-40" aria-hidden="true" tabindex="-1"></a>    iters <span class="ot">=</span> iters <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb672-41"><a href="nelder-mead.html#cb672-41" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-42"><a href="nelder-mead.html#cb672-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># break after no_improv_break iterations with no improvement</span></span>
+<span id="cb672-43"><a href="nelder-mead.html#cb672-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (verbose) <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">&#39;...best so far:&#39;</span>, best))</span>
+<span id="cb672-44"><a href="nelder-mead.html#cb672-44" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-45"><a href="nelder-mead.html#cb672-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (best <span class="sc">&lt;</span> (prev_best <span class="sc">-</span> no_improve_thr)) {</span>
+<span id="cb672-46"><a href="nelder-mead.html#cb672-46" aria-hidden="true" tabindex="-1"></a>      no_improv <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb672-47"><a href="nelder-mead.html#cb672-47" aria-hidden="true" tabindex="-1"></a>      prev_best <span class="ot">=</span> best</span>
+<span id="cb672-48"><a href="nelder-mead.html#cb672-48" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb672-49"><a href="nelder-mead.html#cb672-49" aria-hidden="true" tabindex="-1"></a>      no_improv <span class="ot">=</span> no_improv <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb672-50"><a href="nelder-mead.html#cb672-50" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb672-51"><a href="nelder-mead.html#cb672-51" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-52"><a href="nelder-mead.html#cb672-52" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (no_improv <span class="sc">&gt;=</span> no_improv_break)</span>
+<span id="cb672-53"><a href="nelder-mead.html#cb672-53" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(res[<span class="dv">1</span>, ])</span>
+<span id="cb672-54"><a href="nelder-mead.html#cb672-54" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-55"><a href="nelder-mead.html#cb672-55" aria-hidden="true" tabindex="-1"></a>    nr <span class="ot">=</span> <span class="fu">nrow</span>(res)</span>
+<span id="cb672-56"><a href="nelder-mead.html#cb672-56" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-57"><a href="nelder-mead.html#cb672-57" aria-hidden="true" tabindex="-1"></a>    <span class="co"># centroid: more efficient than previous double loop</span></span>
+<span id="cb672-58"><a href="nelder-mead.html#cb672-58" aria-hidden="true" tabindex="-1"></a>    x0 <span class="ot">=</span> <span class="fu">colMeans</span>(res[(<span class="dv">1</span><span class="sc">:</span>npar), <span class="sc">-</span>nc])</span>
+<span id="cb672-59"><a href="nelder-mead.html#cb672-59" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-60"><a href="nelder-mead.html#cb672-60" aria-hidden="true" tabindex="-1"></a>    <span class="co"># reflection</span></span>
+<span id="cb672-61"><a href="nelder-mead.html#cb672-61" aria-hidden="true" tabindex="-1"></a>    xr <span class="ot">=</span> x0 <span class="sc">+</span> alpha <span class="sc">*</span> (x0 <span class="sc">-</span> res[nr, <span class="sc">-</span>nc])</span>
+<span id="cb672-62"><a href="nelder-mead.html#cb672-62" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-63"><a href="nelder-mead.html#cb672-63" aria-hidden="true" tabindex="-1"></a>    rscore <span class="ot">=</span> <span class="fu">f</span>(xr)</span>
+<span id="cb672-64"><a href="nelder-mead.html#cb672-64" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-65"><a href="nelder-mead.html#cb672-65" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (res[<span class="dv">1</span>, <span class="st">&#39;score&#39;</span>] <span class="sc">&lt;=</span> rscore <span class="sc">&amp;</span> rscore <span class="sc">&lt;</span> res[npar, <span class="st">&#39;score&#39;</span>]) {</span>
+<span id="cb672-66"><a href="nelder-mead.html#cb672-66" aria-hidden="true" tabindex="-1"></a>      res[nr,] <span class="ot">=</span> <span class="fu">c</span>(xr, rscore)</span>
+<span id="cb672-67"><a href="nelder-mead.html#cb672-67" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
+<span id="cb672-68"><a href="nelder-mead.html#cb672-68" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb672-69"><a href="nelder-mead.html#cb672-69" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-70"><a href="nelder-mead.html#cb672-70" aria-hidden="true" tabindex="-1"></a>    <span class="co"># expansion</span></span>
+<span id="cb672-71"><a href="nelder-mead.html#cb672-71" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (rscore <span class="sc">&lt;</span> res[<span class="dv">1</span>, <span class="st">&#39;score&#39;</span>]) {</span>
+<span id="cb672-72"><a href="nelder-mead.html#cb672-72" aria-hidden="true" tabindex="-1"></a>      xe <span class="ot">=</span> x0 <span class="sc">+</span> gamma <span class="sc">*</span> (xr <span class="sc">-</span> x0)</span>
+<span id="cb672-73"><a href="nelder-mead.html#cb672-73" aria-hidden="true" tabindex="-1"></a>      escore <span class="ot">=</span> <span class="fu">f</span>(xe)</span>
+<span id="cb672-74"><a href="nelder-mead.html#cb672-74" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (escore <span class="sc">&lt;</span> rscore) {</span>
+<span id="cb672-75"><a href="nelder-mead.html#cb672-75" aria-hidden="true" tabindex="-1"></a>        res[nr, ] <span class="ot">=</span> <span class="fu">c</span>(xe, escore)</span>
+<span id="cb672-76"><a href="nelder-mead.html#cb672-76" aria-hidden="true" tabindex="-1"></a>        <span class="cf">next</span></span>
+<span id="cb672-77"><a href="nelder-mead.html#cb672-77" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> {</span>
+<span id="cb672-78"><a href="nelder-mead.html#cb672-78" aria-hidden="true" tabindex="-1"></a>        res[nr, ] <span class="ot">=</span> <span class="fu">c</span>(xr, rscore)</span>
+<span id="cb672-79"><a href="nelder-mead.html#cb672-79" aria-hidden="true" tabindex="-1"></a>        <span class="cf">next</span></span>
+<span id="cb672-80"><a href="nelder-mead.html#cb672-80" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb672-81"><a href="nelder-mead.html#cb672-81" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb672-82"><a href="nelder-mead.html#cb672-82" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-83"><a href="nelder-mead.html#cb672-83" aria-hidden="true" tabindex="-1"></a>    <span class="co"># contraction</span></span>
+<span id="cb672-84"><a href="nelder-mead.html#cb672-84" aria-hidden="true" tabindex="-1"></a>    xc <span class="ot">=</span> x0 <span class="sc">+</span> rho <span class="sc">*</span> (res[nr, <span class="sc">-</span>nc] <span class="sc">-</span> x0)</span>
+<span id="cb672-85"><a href="nelder-mead.html#cb672-85" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-86"><a href="nelder-mead.html#cb672-86" aria-hidden="true" tabindex="-1"></a>    cscore <span class="ot">=</span> <span class="fu">f</span>(xc)</span>
+<span id="cb672-87"><a href="nelder-mead.html#cb672-87" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-88"><a href="nelder-mead.html#cb672-88" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (cscore <span class="sc">&lt;</span> res[nr, <span class="st">&#39;score&#39;</span>]) {</span>
+<span id="cb672-89"><a href="nelder-mead.html#cb672-89" aria-hidden="true" tabindex="-1"></a>      res[nr,] <span class="ot">=</span> <span class="fu">c</span>(xc, cscore)</span>
+<span id="cb672-90"><a href="nelder-mead.html#cb672-90" aria-hidden="true" tabindex="-1"></a>      <span class="cf">next</span></span>
+<span id="cb672-91"><a href="nelder-mead.html#cb672-91" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb672-92"><a href="nelder-mead.html#cb672-92" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-93"><a href="nelder-mead.html#cb672-93" aria-hidden="true" tabindex="-1"></a>    <span class="co"># reduction</span></span>
+<span id="cb672-94"><a href="nelder-mead.html#cb672-94" aria-hidden="true" tabindex="-1"></a>    x1 <span class="ot">=</span> res[<span class="dv">1</span>, <span class="sc">-</span>nc]</span>
+<span id="cb672-95"><a href="nelder-mead.html#cb672-95" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-96"><a href="nelder-mead.html#cb672-96" aria-hidden="true" tabindex="-1"></a>    nres <span class="ot">=</span> res</span>
+<span id="cb672-97"><a href="nelder-mead.html#cb672-97" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-98"><a href="nelder-mead.html#cb672-98" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>nr) {</span>
+<span id="cb672-99"><a href="nelder-mead.html#cb672-99" aria-hidden="true" tabindex="-1"></a>      redx  <span class="ot">=</span> x1 <span class="sc">+</span> sigma <span class="sc">*</span> (res[i, <span class="sc">-</span>nc] <span class="sc">-</span> x1)</span>
+<span id="cb672-100"><a href="nelder-mead.html#cb672-100" aria-hidden="true" tabindex="-1"></a>      score <span class="ot">=</span> <span class="fu">f</span>(redx)</span>
+<span id="cb672-101"><a href="nelder-mead.html#cb672-101" aria-hidden="true" tabindex="-1"></a>      nres[i, ] <span class="ot">=</span> <span class="fu">c</span>(redx, score)</span>
+<span id="cb672-102"><a href="nelder-mead.html#cb672-102" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb672-103"><a href="nelder-mead.html#cb672-103" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb672-104"><a href="nelder-mead.html#cb672-104" aria-hidden="true" tabindex="-1"></a>    res <span class="ot">=</span> nres</span>
+<span id="cb672-105"><a href="nelder-mead.html#cb672-105" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb672-106"><a href="nelder-mead.html#cb672-106" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div id="example-6" class="section level3">
+<h3>Example</h3>
+<p>The function to minimize.</p>
+<div class="sourceCode" id="cb673"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb673-1"><a href="nelder-mead.html#cb673-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">=</span> <span class="cf">function</span>(x) {</span>
+<span id="cb673-2"><a href="nelder-mead.html#cb673-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sin</span>(x[<span class="dv">1</span>]) <span class="sc">*</span> <span class="fu">cos</span>(x[<span class="dv">2</span>]) <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">/</span> (<span class="fu">abs</span>(x[<span class="dv">3</span>]) <span class="sc">+</span> <span class="dv">1</span>))</span>
+<span id="cb673-3"><a href="nelder-mead.html#cb673-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb674"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb674-1"><a href="nelder-mead.html#cb674-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nelder_mead2</span>(</span>
+<span id="cb674-2"><a href="nelder-mead.html#cb674-2" aria-hidden="true" tabindex="-1"></a>  f, </span>
+<span id="cb674-3"><a href="nelder-mead.html#cb674-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>), </span>
+<span id="cb674-4"><a href="nelder-mead.html#cb674-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_iter =</span> <span class="dv">1000</span>, </span>
+<span id="cb674-5"><a href="nelder-mead.html#cb674-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_improve_thr =</span> <span class="fl">1e-12</span></span>
+<span id="cb674-6"><a href="nelder-mead.html#cb674-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<pre><code>        par_1         par_2         par_3         score 
+-1.570797e+00 -2.235577e-07  1.622809e-14 -1.000000e+00 </code></pre>
+<div class="sourceCode" id="cb676"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb676-1"><a href="nelder-mead.html#cb676-1" aria-hidden="true" tabindex="-1"></a>optimx<span class="sc">::</span><span class="fu">optimx</span>(</span>
+<span id="cb676-2"><a href="nelder-mead.html#cb676-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">par =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>), </span>
+<span id="cb676-3"><a href="nelder-mead.html#cb676-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">fn =</span> f, </span>
+<span id="cb676-4"><a href="nelder-mead.html#cb676-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">method   =</span> <span class="st">&quot;Nelder-Mead&quot;</span>,</span>
+<span id="cb676-5"><a href="nelder-mead.html#cb676-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">control  =</span> <span class="fu">list</span>(</span>
+<span id="cb676-6"><a href="nelder-mead.html#cb676-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha  =</span> <span class="dv">1</span>,</span>
+<span id="cb676-7"><a href="nelder-mead.html#cb676-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">gamma  =</span> <span class="dv">2</span>,</span>
+<span id="cb676-8"><a href="nelder-mead.html#cb676-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">beta   =</span> <span class="fl">0.5</span>,</span>
+<span id="cb676-9"><a href="nelder-mead.html#cb676-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">maxit  =</span> <span class="dv">1000</span>,</span>
+<span id="cb676-10"><a href="nelder-mead.html#cb676-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">reltol =</span> <span class="fl">1e-12</span></span>
+<span id="cb676-11"><a href="nelder-mead.html#cb676-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb676-12"><a href="nelder-mead.html#cb676-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<pre><code>                   p1           p2           p3 value fevals gevals niter convcode kkt1 kkt2 xtime
+Nelder-Mead -1.570796 1.394018e-08 1.088215e-16    -1    861     NA    NA        0 TRUE TRUE 0.001</code></pre>
+</div>
+<div id="a-regression-model-1" class="section level3">
+<h3>A Regression Model</h3>
+<div class="sourceCode" id="cb678"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb678-1"><a href="nelder-mead.html#cb678-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">8675309</span>)</span>
+<span id="cb678-2"><a href="nelder-mead.html#cb678-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb678-3"><a href="nelder-mead.html#cb678-3" aria-hidden="true" tabindex="-1"></a>N <span class="ot">=</span> <span class="dv">500</span></span>
+<span id="cb678-4"><a href="nelder-mead.html#cb678-4" aria-hidden="true" tabindex="-1"></a>n_preds <span class="ot">=</span> <span class="dv">5</span></span>
+<span id="cb678-5"><a href="nelder-mead.html#cb678-5" aria-hidden="true" tabindex="-1"></a>X <span class="ot">=</span> <span class="fu">cbind</span>(<span class="dv">1</span>, <span class="fu">matrix</span>(<span class="fu">rnorm</span>(N <span class="sc">*</span> n_preds), <span class="at">ncol =</span> n_preds))</span>
+<span id="cb678-6"><a href="nelder-mead.html#cb678-6" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">=</span> <span class="fu">runif</span>(<span class="fu">ncol</span>(X), <span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb678-7"><a href="nelder-mead.html#cb678-7" aria-hidden="true" tabindex="-1"></a>y <span class="ot">=</span> X <span class="sc">%*%</span> beta <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="fu">nrow</span>(X))</span></code></pre></div>
+<p>Least squares loss function to minimize.</p>
+<div class="sourceCode" id="cb679"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb679-1"><a href="nelder-mead.html#cb679-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">=</span> <span class="cf">function</span>(b) {</span>
+<span id="cb679-2"><a href="nelder-mead.html#cb679-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">crossprod</span>(y <span class="sc">-</span> X <span class="sc">%*%</span> b)[,<span class="dv">1</span>]  <span class="co"># if using optimx need scalar</span></span>
+<span id="cb679-3"><a href="nelder-mead.html#cb679-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb680"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb680-1"><a href="nelder-mead.html#cb680-1" aria-hidden="true" tabindex="-1"></a>fit_nm <span class="ot">=</span> <span class="fu">nelder_mead2</span>(</span>
+<span id="cb680-2"><a href="nelder-mead.html#cb680-2" aria-hidden="true" tabindex="-1"></a>  f, </span>
+<span id="cb680-3"><a href="nelder-mead.html#cb680-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">runif</span>(<span class="fu">ncol</span>(X)),</span>
+<span id="cb680-4"><a href="nelder-mead.html#cb680-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_iter =</span> <span class="dv">2000</span>,</span>
+<span id="cb680-5"><a href="nelder-mead.html#cb680-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">no_improve_thr =</span> <span class="fl">1e-12</span></span>
+<span id="cb680-6"><a href="nelder-mead.html#cb680-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<div id="comparison-44" class="section level4">
+<h4>Comparison</h4>
+<p>Compare to <span class="pack" style="">optimx</span> and <span class="func" style="">lm</span> as before.</p>
+<div class="sourceCode" id="cb681"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb681-1"><a href="nelder-mead.html#cb681-1" aria-hidden="true" tabindex="-1"></a>fit_nm_optimx <span class="ot">=</span> optimx<span class="sc">::</span><span class="fu">optimx</span>(</span>
+<span id="cb681-2"><a href="nelder-mead.html#cb681-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">runif</span>(<span class="fu">ncol</span>(X)),</span>
+<span id="cb681-3"><a href="nelder-mead.html#cb681-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">fn =</span> f,</span>
+<span id="cb681-4"><a href="nelder-mead.html#cb681-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">method   =</span> <span class="st">&#39;Nelder-Mead&#39;</span>,</span>
+<span id="cb681-5"><a href="nelder-mead.html#cb681-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">control  =</span> <span class="fu">list</span>(</span>
+<span id="cb681-6"><a href="nelder-mead.html#cb681-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha  =</span> <span class="dv">1</span>,</span>
+<span id="cb681-7"><a href="nelder-mead.html#cb681-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">gamma  =</span> <span class="dv">2</span>,</span>
+<span id="cb681-8"><a href="nelder-mead.html#cb681-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">beta   =</span> <span class="fl">0.5</span>,</span>
+<span id="cb681-9"><a href="nelder-mead.html#cb681-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">maxit  =</span> <span class="dv">2000</span>,</span>
+<span id="cb681-10"><a href="nelder-mead.html#cb681-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">reltol =</span> <span class="fl">1e-12</span></span>
+<span id="cb681-11"><a href="nelder-mead.html#cb681-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb681-12"><a href="nelder-mead.html#cb681-12" aria-hidden="true" tabindex="-1"></a>)[<span class="dv">1</span><span class="sc">:</span>(n_preds <span class="sc">+</span> <span class="dv">1</span>)]</span>
+<span id="cb681-13"><a href="nelder-mead.html#cb681-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb681-14"><a href="nelder-mead.html#cb681-14" aria-hidden="true" tabindex="-1"></a>fit_lm <span class="ot">=</span> <span class="fu">lm.fit</span>(X, y)<span class="sc">$</span>coef</span></code></pre></div>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+nm_func
+</th>
+<th style="text-align:right;">
+nm_optimx
+</th>
+<th style="text-align:right;">
+lm
+</th>
+<th style="text-align:right;">
+truth
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+p1
+</td>
+<td style="text-align:right;">
+-0.962
+</td>
+<td style="text-align:right;">
+-0.962
+</td>
+<td style="text-align:right;">
+-0.962
+</td>
+<td style="text-align:right;">
+-0.909
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+p2
+</td>
+<td style="text-align:right;">
+0.594
+</td>
+<td style="text-align:right;">
+0.594
+</td>
+<td style="text-align:right;">
+0.594
+</td>
+<td style="text-align:right;">
+0.620
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+p3
+</td>
+<td style="text-align:right;">
+0.049
+</td>
+<td style="text-align:right;">
+0.049
+</td>
+<td style="text-align:right;">
+0.049
+</td>
+<td style="text-align:right;">
+0.074
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+p4
+</td>
+<td style="text-align:right;">
+0.276
+</td>
+<td style="text-align:right;">
+0.276
+</td>
+<td style="text-align:right;">
+0.276
+</td>
+<td style="text-align:right;">
+0.320
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+p5
+</td>
+<td style="text-align:right;">
+0.975
+</td>
+<td style="text-align:right;">
+0.975
+</td>
+<td style="text-align:right;">
+0.975
+</td>
+<td style="text-align:right;">
+0.956
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+p6
+</td>
+<td style="text-align:right;">
+-0.075
+</td>
+<td style="text-align:right;">
+-0.075
+</td>
+<td style="text-align:right;">
+-0.075
+</td>
+<td style="text-align:right;">
+-0.080
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="source-42" class="section level2">
+<h2>Source</h2>
+<p>Original code available at <a href="https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/nelder_mead.R" class="uri">https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/nelder_mead.R</a></p>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="newton-irls.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="em.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": false,
+"twitter": false,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"all": ["twitter", "facebook", "linkedin", "google", "weibo", "instapaper"],
+"google": false,
+"instapper": false
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/m-clark/models-by-example/blob/master/nelder-mead.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"toc": {
+"collapse": "section",
+"depth": 2,
+"scroll_highlight": true
+},
+"df_print": "kable",
+"highlight": "pygments",
+"search": true
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

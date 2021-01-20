@@ -1,0 +1,165 @@
+## Mixed Model via ML
+
+### Introduction
+
+The following is based on the Wood text (Generalized Additive Models, 1st ed.) on additive models, chapter 6 in particular. It assumes familiarity with standard regression from a matrix perspective and at least passing familiarity with mixed models. The full document this chapter is  based on can be found [here](https://m-clark.github.io/docs/mixedModels/mixedModelML.html), and contains more detail and exposition.  See also the comparison of additive and mixed models [here](https://m-clark.github.io/generalized-additive-models/appendix.html#a-comparison-to-mixed-models).
+
+For this we'll use the <span class="objclass" style = "">sleepstudy</span> data from the <span class="pack" style = "">lme4</span> package. The data has reaction times for 18 individuals over 10 days each (see the help file for the <span class="objclass" style = "">sleepstudy</span> object for more details).
+
+
+### Data Setup
+
+```{r mixed-ml-setup}
+library(tidyverse)
+
+data(sleepstudy, package = 'lme4')
+
+X = model.matrix(~Days, sleepstudy)
+Z = model.matrix(~factor(sleepstudy$Subject) - 1)
+
+colnames(Z) = paste0('Subject_', unique(sleepstudy$Subject))  # for cleaner presentation later
+rownames(Z) = paste0('Subject_', sleepstudy$Subject)
+
+y = sleepstudy$Reaction
+```
+
+
+### Function
+
+The following is based on the code in Wood (6.2.2), with a couple modifications for consistent nomenclature and presentation. We use <span class='func'>optim</span> and a minimizing function, in this case the negative log likelihood, to estimate the parameters of interest, collectively $\theta$, in the code below. The (square root of the) variances will be estimated on the log scale. In Wood, he simply extracts the 'fixed effects' for the intercept and days effects using `lm` (6.2.3), and we'll do the same.
+
+```{r mixed-ml-func}
+mixed_ll <- function(y, X, Z, theta) {
+  tau   = exp(theta[1])
+  sigma = exp(theta[2])
+  n = length(y)
+  
+  # evaluate covariance matrix for y
+  e = tcrossprod(Z)*tau^2 + diag(n)*sigma^2
+  L = chol(e)  # L'L = e
+  
+  # transform dependent linear model to independent
+  y  = backsolve(L, y, transpose = TRUE)
+  X  = backsolve(L, X, transpose = TRUE)
+  b  = coef(lm(y~X-1))
+  LP = X %*% b
+  
+  ll = -n/2*log(2*pi) -sum(log(diag(L))) - crossprod(y - LP)/2
+  -ll
+}
+```
+
+
+Here is an alternative function using a multivariate normal approach that doesn't use the transformation to independence, and might provide additional perspective.  In this case, `y` is just one large multivariate draw with mu mean vector and N x N covariance matrix e.
+
+```{r mixed-ml-func-mv}
+mixed_ll_mv <- function(y, X, Z, theta) {
+  tau   = exp(theta[1])
+  sigma = exp(theta[2])
+  n = length(y)
+  
+  # evaluate covariance matrix for y
+  e  = tcrossprod(Z)*tau^2 + diag(n)*sigma^2
+  b  = coef(lm.fit(X, y))
+  mu = X %*% b
+
+  ll = mvtnorm::dmvnorm(y, mu, e, log = TRUE)
+  -ll
+}
+```
+
+
+### Estimation
+
+Now we're ready to use the <span class='func'>optim</span> function for estimation.  A slight change to tolerance is included to get closer estimates to <span class='pack'>lme4</span>, which we will compare shortly.
+
+```{r mixed-ml-est}
+param_init = c(0, 0)
+names(param_init) = c('tau', 'sigma')
+
+fit = optim(
+  fn  = mixed_ll,
+  X   = X,
+  y   = y,
+  Z   = Z,
+  par = param_init,
+  control = list(reltol = 1e-10)
+)
+
+fit_mv = optim(
+  fn  = mixed_ll_mv,
+  X   = X,
+  y   = y,
+  Z   = Z,
+  par = param_init,
+  control = list(reltol = 1e-10)
+)
+```
+
+### Comparison
+
+```{r mixed-ml-est-show, echo=FALSE}
+bind_rows(
+  c(exp(fit$par), negLogLik = fit$value, coef(lm(y ~ X - 1))),
+  c(exp(fit_mv$par), negLogLik = fit_mv$value, coef(lm(y ~ X - 1)))
+) %>%
+  mutate(func = c('mixed_ll', 'mixed_ll_mv')) %>% 
+  select(func, everything()) %>% 
+  kable_df()
+```
+
+
+As we can see, both formulations produce identical results. We can now compare those results to the <span class="pack" style = "">lme4</span> output for the same model, and see that we're getting what we should.
+
+```{r lme4}
+library(lme4)
+
+fit_mer = lmer(Reaction ~ Days + (1 | Subject), sleepstudy, REML = FALSE)
+
+fit_mer
+```
+
+We can also predict the random effects (Wood, 6.2.4), sometimes called BLUPs (Best Linear Unbiased Predictions) and after doing so again compare the results to the <span class="pack" style = "">lme4</span> estimates.
+
+```{r mixed-ml-ranef-est}
+tau = exp(fit$par)[1]
+tausq   = tau^2
+sigma   = exp(fit$par)[2]
+sigmasq = sigma^2
+Sigma   = tcrossprod(Z)*tausq/sigmasq + diag(length(y))
+ranef_est = tausq * t(Z) %*% solve(Sigma) %*% resid(lm(y ~ X - 1))/sigmasq
+```
+
+
+```{r mixed-ml-ranef-est-show, echo=FALSE}
+data.frame(
+  ranef_est, 
+  lme4 = ranef(fit_mer)$Subject[[1]]
+) %>% 
+  kable_df(2)
+```
+
+
+
+#### Issues with ML estimation
+
+Situations arise in which using maximum likelihood for mixed models would result in notably biased estimates (e.g. small N, lots of fixed effects), and so it is typically not used.  Standard software usually defaults to *restricted* maximum likelihood.  However, our purpose here has been served.
+
+
+### Link with penalized regression
+
+A link exists between mixed models and a [penalized likelihood approach][Penalized Maximum Likelihood].  For a penalized approach with the the standard linear model, the objective function we want to minimize can be expressed as follows:
+
+$$ \lVert y- X\beta \rVert^2 + \beta^\intercal\beta $$
+
+The added component to the sum of the squared residuals is the penalty. By adding the sum of the squared coefficients, we end up keeping them from getting too big, and this helps to avoid *overfitting*.  Another interesting aspect of this approach is that it is comparable to using a specific *prior* on the coefficients in a Bayesian framework.  
+
+We can now see mixed models as a penalized technique.  If we knew $\sigma$ and $\psi_\theta$, then the predicted random effects $g$ and estimates for the fixed effects $\beta$ are those that minimize the following objective function:
+
+$$ \frac{1}{\sigma^2}\lVert y - X\beta - Zg \rVert^2 + g^\intercal\psi_\theta^{-1}g $$
+
+### Source
+
+Main doc found at https://m-clark.github.io/docs/mixedModels/mixedModelML.html
+
+

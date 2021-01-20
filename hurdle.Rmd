@@ -1,0 +1,246 @@
+# Hurdle Model
+
+
+Hurdle models are applied to situations in which target data has relatively many of one value, usually zero, to go along with the other observed values.  They are two-part models, a logistic model for whether an observation is zero or not, and a count model for the other part. The key distinction from the usual 'zero-inflated' count models, is that the count distribution does not contribute to the excess zeros.  While the typical application is count data, the approach can be applied to any distribution in theory. 
+
+## Poisson
+
+### Data Setup
+
+Here we import a simple data set. The example comes from the Stata help file for zinb command. One can compare results with `hnblogit` command in Stata.
+
+```{r hurdle-setup}
+library(tidyverse)
+
+fish = haven::read_dta("http://www.stata-press.com/data/r11/fish.dta")
+```
+
+### Function
+
+The likelihood function is of two parts, one a logistic model, the other, a poisson count model.
+
+```{r pois-hurdle-ll}
+hurdle_poisson_ll <- function(y, X, par) {
+  # Extract parameters
+  logitpars = par[grep('logit', names(par))]
+  poispars  = par[grep('pois', names(par))]
+  
+  # Logit model part
+  Xlogit = X
+  ylogit = ifelse(y == 0, 0, 1)
+  
+  LPlogit = Xlogit %*% logitpars
+  mulogit = plogis(LPlogit)
+  
+  # Calculate the likelihood
+  logliklogit = -sum( ylogit*log(mulogit) + (1 - ylogit)*log(1 - mulogit) )  
+  
+  # Poisson part
+  Xpois = X[y > 0, ]
+  ypois = y[y > 0]
+  
+  mupois = exp(Xpois %*% poispars)
+  
+  # Calculate the likelihood
+  loglik0    = -mupois
+  loglikpois = -sum(dpois(ypois, lambda = mupois, log = TRUE)) + 
+    sum(log(1 - exp(loglik0)))
+  
+  # combine likelihoods
+  loglik = loglikpois + logliklogit
+  loglik
+}
+```
+
+
+
+
+Get some starting values from <span class="func" style = "">glm</span> For these functions, and create a named vector for them.
+
+```{r pois-hurdle-starts}
+init_mod = glm(
+  count ~ persons + livebait,
+  data   = fish,
+  family = poisson,
+  x = TRUE,
+  y = TRUE
+)
+
+starts = c(logit = coef(init_mod), pois = coef(init_mod))  
+```
+
+
+### Estimation
+
+Use <span class="func" style = "">optim</span>. to estimate parameters. I fiddle with some options to reproduce the  hurdle function as much as possible.
+ 
+```{r pois-hurdle-est}
+fit = optim(
+  par = starts,
+  fn  = hurdle_poisson_ll,
+  X   = init_mod$x,
+  y   = init_mod$y,
+  control = list(maxit = 5000, reltol = 1e-12),
+  hessian = TRUE
+)
+# fit
+```
+
+
+
+Extract the elements from the output to create a summary table.
+
+```{r pois-hurdle-ext}
+B  = fit$par
+se = sqrt(diag(solve(fit$hessian)))
+Z  = B/se
+p  = ifelse(Z >= 0, pnorm(Z, lower = FALSE)*2, pnorm(Z)*2)
+summary_table = round(data.frame(B, se, Z, p), 3)
+
+list(summary = summary_table, ll = fit$value)
+```
+
+### Comparison
+
+Compare to <span class="func" style = "">hurdle</span> from <span class="pack" style = "">pscl</span> package.
+
+```{r pois-hurdle-pscl}
+library(pscl)
+
+fit_pscl = hurdle(
+  count ~ persons + livebait,
+  data = fish,
+  zero.dist = "binomial",
+  dist = "poisson"
+)
+```
+
+
+```{r pois-hurdle-pscl-show, echo=FALSE}
+init1 = purrr::map(summary(fit_pscl)$coefficients, function(x) {
+  data.frame(x)
+  colnames(x) = colnames(summary_table)
+  x
+}) %>%
+  do.call(rbind, .) %>%
+  as.data.frame() %>%
+  rownames_to_column('coef') 
+
+init2 = summary_table %>% rownames_to_column('coef')
+
+bind_rows(list(pscl = init1, hurdle_poisson_ll = init2), .id = '') %>% 
+  kable_df()
+```
+
+
+
+
+## Negative Binomial
+
+### Function
+
+The likelihood function.
+
+```{r nb-hurdle-ll}
+hurdle_nb_ll <- function(y, X, par) {
+  # Extract parameters
+  logitpars  = par[grep('logit', names(par))]
+  NegBinpars = par[grep('NegBin', names(par))]
+  
+  theta = exp(par[grep('theta', names(par))])
+  
+  # Logit model part
+  Xlogit = X
+  ylogit = ifelse(y == 0, 0, 1)
+  
+  LPlogit = Xlogit%*%logitpars
+  mulogit =  plogis(LPlogit)
+  
+  # Calculate the likelihood
+  logliklogit = -sum( ylogit*log(mulogit) + (1 - ylogit)*log(1 - mulogit) )
+  
+  #NB part
+  XNB = X[y > 0, ]
+  yNB = y[y > 0]
+  
+  muNB = exp(XNB %*% NegBinpars)
+  
+  # Calculate the likelihood
+  loglik0  = dnbinom(0,   mu = muNB, size = theta, log = TRUE)
+  loglik1  = dnbinom(yNB, mu = muNB, size = theta, log = TRUE)
+  loglikNB = -( sum(loglik1) - sum(log(1 - exp(loglik0))) )
+  
+  # combine likelihoods
+  loglik = loglikNB + logliklogit
+  loglik
+}
+```
+
+### Estimation
+
+```{r nb-hurdle-est}
+starts =  c(
+  logit  = coef(init_mod),
+  NegBin = coef(init_mod),
+  theta  = 1
+)
+
+fit_nb = optim(
+  par = starts,
+  fn  = hurdle_nb_ll,
+  X   = init_mod$x,
+  y   = init_mod$y,
+  control = list(maxit = 5000, reltol = 1e-12),
+  method  = "BFGS",
+  hessian = TRUE
+)
+# fit_nb 
+
+B  = fit_nb$par
+se = sqrt(diag(solve(fit_nb$hessian)))
+Z  = B/se
+p  = ifelse(Z >= 0, pnorm(Z, lower = FALSE)*2, pnorm(Z)*2)
+
+summary_table = round(data.frame(B, se, Z, p), 3)
+
+list(summary = summary_table, ll = fit_nb$value)
+```
+
+
+
+### Comparison
+
+
+```{r nb-hurdle-compare}
+fit_pscl = hurdle(
+  count ~ persons + livebait,
+  data = fish,
+  zero.dist = "binomial",
+  dist = "negbin"
+)
+
+# summary(fit_pscl)$coefficients
+# summary_table
+```
+
+```{r nb-hurdle-pscl-show, echo=FALSE}
+init1 = purrr::map(summary(fit_pscl)$coefficients, function(x) {
+  data.frame(x)
+  colnames(x) = colnames(summary_table)
+  x
+}) %>%
+  do.call(rbind, .) %>%
+  as.data.frame() %>%
+  rownames_to_column('coef') 
+
+init2 = summary_table %>% rownames_to_column('coef')
+
+bind_rows(list(pscl = init1, hurdle_nb_ll = init2), .id = '') %>% 
+  kable_df()
+```
+
+
+
+## Source
+
+Original code available at https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/hurdle.R

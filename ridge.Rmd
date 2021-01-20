@@ -1,0 +1,117 @@
+## L2 (ridge) regularization
+
+
+Compare to the [lasso section][L1 (lasso) regularization]. 
+
+### Data Setup
+
+```{r ridge-setup}
+library(tidyverse)
+
+set.seed(8675309)
+
+N = 500
+p = 10
+X = scale(matrix(rnorm(N * p), ncol = p))
+b = c(.5, -.5, .25, -.25, .125, -.125, rep(0, 4))
+y = scale(X %*% b + rnorm(N, sd = .5))
+```
+
+
+
+### Function
+
+```{r ridge-function}
+ridge <- function(w, X, y, lambda = .1) {
+  # X: model matrix; 
+  # y: target; 
+  # lambda: penalty parameter; 
+  # w: the weights/coefficients
+  
+  crossprod(y - X %*% w) + lambda * length(y) * crossprod(w)
+}
+```
+
+
+
+### Estimation
+
+Note, if `lambda = 0`, i.e. no penalty, the result is the same as what you would get from the base R  <span class="func" style = "">lm.fit</span>.
+
+```{r ridge-est}
+fit_ridge = optim(
+  rep(0, ncol(X)),
+  ridge,
+  X = X,
+  y = y,
+  lambda = .1,
+  method = 'BFGS'
+)
+```
+
+
+Analytical result.
+
+```{r ridge-analytical}
+fit_ridge2 = solve(crossprod(X) + diag(length(y)*.1, ncol(X))) %*% crossprod(X, y)
+```
+
+
+An alternative approach using 'augmented' data (note `sigma` is ignored as it equals 1, but otherwise
+X/sigma and y/sigma).
+
+
+```{r ridge-augmented}
+X2 = rbind(X, diag(sqrt(length(y)*.1), ncol(X)))
+y2 = c(y, rep(0, ncol(X)))
+
+tail(X2)
+tail(y2)
+
+fit_ridge3 = solve(crossprod(X2)) %*% crossprod(X2, y2)
+```
+
+The <span class="pack" style = "">glmnet</span> approach is by default a mixture
+of ridge and lasso penalties, setting `alpha = 1` reduces to lasso (`alpha = 0`
+would be ridge). We set the lambda to a couple values while only wanting the one
+set to the same lambda value as above (`s`).
+
+```{r ridge-glmnet}
+library(glmnet)
+
+fit_glmnet = coef(
+  glmnet(
+    X,
+    y,
+    alpha = 0,
+    lambda = c(10, 1, .1),
+    thresh = 1e-12,
+    intercept = F
+  ), 
+  s = .1
+)
+
+```
+
+
+### Comparison
+
+We can now compare the coefficients of all our results.
+
+```{r ridge-compare, echo=FALSE}
+data.frame(
+  lm     = coef(lm(y ~ . - 1, data.frame(X))),
+  ridge  = fit_ridge$par,
+  ridge2 = fit_ridge2,
+  ridge3 = fit_ridge3,
+  glmnet = fit_glmnet[-1, 1],
+  truth  = b
+) %>% 
+  kable_df()
+```
+
+
+
+### Source
+
+Original code available at https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/ridge.R

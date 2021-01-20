@@ -1,0 +1,67 @@
+book_filename: 'model-demos'
+language:
+  ui:
+    chapter_name: 'Chapter '
+output_dir: 'docs'
+delete_merged_file: true
+
+rmd_files: [
+  index.Rmd,
+  introduction.Rmd,
+  
+  # Models
+  linear-regression.Rmd,
+  logistic-regression.Rmd,
+  mixed-models.Rmd,
+  probit.Rmd,
+  heckman-selection.Rmd,
+  marginal-structural.Rmd,
+  tobit.Rmd,
+  cox.Rmd,
+  hurdle.Rmd,
+  zi.Rmd,
+  naive-bayes.Rmd,
+  multinomial.Rmd,
+  ordinal.Rmd,
+  markov.Rmd,
+  hmm.Rmd,
+  quantile-regression.Rmd,
+  cubic-spline.Rmd,
+  gaussian-process.Rmd,
+  neural-network.Rmd,
+  elm.Rmd,
+  rkhs.Rmd,
+  cfa.Rmd,
+  
+  # Bayesian
+  bayesian.Rmd,
+  bayesian-basics.Rmd,
+  bayesian-t-test.Rmd,
+  bayesian-linear-regression.Rmd,
+  bayesian-beta-regression.Rmd,
+  bayesian-mixed-model.Rmd,
+  bayesian-mixed-mediation.Rmd,
+  bayesian-irt.Rmd,
+  bayesian-cfa.Rmd,
+  bayesian-non-parametric.Rmd,
+  bayesian-stochastic-volatility.Rmd,
+  bayesian-multinomial-model.Rmd,
+  bayesian-variational.Rmd,
+  bayesian-topic-model.Rmd,
+  
+  # Algos
+  maximum-likelihood.Rmd,
+  penalized-maximum-likelihood.Rmd,
+  # lasso.Rmd,
+  # ridge.Rmd,
+  newton-irls.Rmd,
+  nelder-mead.Rmd,
+  em.Rmd,
+  gradient-descent.Rmd,
+  stochastic-gradient-descent.Rmd,
+  metropolis-hastings.Rmd,
+  hamiltonian-monte-carlo.Rmd,
+  
+  # Other
+  supplemental.Rmd
+]

@@ -1,0 +1,254 @@
+# Penalized Maximum Likelihood
+
+
+## Introduction
+
+This demonstration regards a standard regression model via penalized likelihood.
+See the [Maximum Likelihood chapter][Maximum Likelihood] for a starting point. Here
+the penalty is specified (via `lambda` argument), but one would typically
+estimate the model via cross-validation or some other fashion. Two penalties are
+possible with the function.  One using the (squared) L2 norm (aka ridge
+regression, Tikhonov regularization), another using the L1 norm (aka lasso)
+which has the possibility of penalizing coefficients to zero, and thus can serve
+as a model selection procedure. I have more technical approaches to the lasso
+and ridge in the [lasso][L1 (lasso) regularization] and [ridge][L2 (ridge)
+regularization] sections.
+
+Note that both L2 and L1 approaches can be seen as maximum a posteriori (MAP)
+estimates for a Bayesian regression with a specific prior on the
+coefficients. The L2 approach is akin to a normal prior with zero mean, while
+L1 is akin to a zero mean Laplace prior.  See the [Bayesian regression chapter][Bayesian Linear Regression] for an approach in that regard.
+
+
+
+
+###  Data Setup
+
+```{r pml-data-setup}
+library(tidyverse)
+
+set.seed(123)  # ensures replication
+
+# predictors and response
+N = 100 # sample size
+k = 2   # number of desired predictors
+X = matrix(rnorm(N * k), ncol = k)  
+y = -.5 + .2*X[, 1] + .1*X[, 2] + rnorm(N, sd = .5)  # increasing N will get estimated values closer to these
+
+dfXy = data.frame(X,y)
+```
+
+
+### Functions
+
+A straightforward function to estimate the log likelihood.
+
+```{r penalized_ML}
+penalized_ML <- function(
+  par,
+  X,
+  y,
+  lambda = .1,
+  type = 'L2'
+) {
+  # arguments- 
+  # par: parameters to be estimated
+  # X: predictor matrix with intercept column
+  # y: response
+  # lambda: penalty coefficient
+  # type: penalty approach
+  
+  # setup
+  beta   = par[-1]                               # coefficients
+  sigma2 = par[1]                                # error variance
+  sigma  = sqrt(sigma2)
+  N = nrow(X)
+
+  LP = X %*% beta                                # linear predictor
+  mu = LP                                        # identity link in the glm sense
+  
+  # calculate likelihood
+  L = dnorm(y, mean = mu, sd = sigma, log = T)   # log likelihood
+  
+  switch(
+    type,
+    'L2' = -sum(L) + lambda * crossprod(beta[-1]),    # the intercept is not penalized
+    'L1' = -sum(L) + lambda * sum(abs(beta[-1]))
+  )
+}
+```
+
+
+
+This next function is a <span class="pack" style = "">glmnet</span>  style
+approach that will put the lambda coefficient on equivalent scale. It uses a
+different objective function.  Note that <span class="pack" style =
+"">glmnet</span> is actually using `elasticnet`, which mixes both L1 and L2
+penalties.
+
+```{r penalized_ML2}
+penalized_ML2 <- function(
+  par,
+  X,
+  y,
+  lambda = .1,
+  type = 'L2'
+) {
+  
+  # arguments- 
+  # par: parameters to be estimated
+  # X: predictor matrix with intercept column
+  # y: response
+  # lambda: penalty coefficient
+  # type: penalty approach
+  
+  # setup
+  beta = par                                   # coefficients
+  N = nrow(X)
+  
+  # linear predictor
+  LP = X %*% beta                              # linear predictor
+  mu = LP                                      # identity link in the glm sense
+  
+  switch(
+    type,
+    'L2' = .5 * crossprod(y - X %*% beta) / N + lambda * crossprod(beta[-1]),
+    'L1' = .5 * crossprod(y - X %*% beta) / N + lambda * sum(abs(beta[-1]))
+  )
+}
+```
+
+
+
+### Estimation
+
+Setup the model matrix for use with <span class="func" style = "">optim</span>.
+
+```{r penalized-ml-mm}
+X = cbind(1, X)
+```
+
+
+We'll need to set initial values.  Note we'd normally want to handle the sigma
+parameter differently as it's bounded by zero, but we'll ignore for
+demonstration.
+
+```{r penalized-ml-est}
+init = c(1, rep(0, ncol(X)))
+names(init) = c('sigma2', 'intercept', 'b1', 'b2')
+
+fit_l2 = optim(
+  par = init,
+  fn  = penalized_ML,
+  X   = X,
+  y   = y,
+  lambda  = 1,
+  control = list(reltol = 1e-12)
+)
+
+fit_l1 = optim(
+  par = init,
+  fn  = penalized_ML,
+  X   = X,
+  y   = y,
+  lambda  = 1,
+  type    = 'L1',
+  control = list(reltol = 1e-12)
+)
+```
+
+
+### Comparison
+
+Compare to `lm` in base R.
+
+```{r penalized-ml-compare}
+fit_lm = lm(y ~ ., dfXy)
+```
+
+
+```{r penalized-ml-compare-show, echo=FALSE}
+parspenalized_MLL2 = fit_l2$par
+parspenalized_MLL1 = fit_l1$par
+
+rbind(
+  fit_l2 = fit_l2$par,
+  fit_l1 = fit_l1$par,
+  fit_lm = c(summary(fit_lm)$sigma ^ 2, coef(fit_lm))
+) %>%
+  kable_df()
+```
+
+
+
+Compare to <span class="pack" style = "">glmnet</span>. Setting alpha to 0 and 1
+is equivalent to L2 and L1 penalties respectively. You also wouldn't want to
+specify lambda normally, and rather let it come about as part of the estimation
+procedure.  We do so here just for demonstration.
+
+
+```{r penalized-ml-compare-glmnet}
+library(glmnet)
+
+glmnetL2 = glmnet(
+  X[, -1],
+  y,
+  alpha  = 0,
+  lambda = .01,
+  standardize = FALSE
+)
+
+glmnetL1 = glmnet(
+  X[, -1],
+  y,
+  alpha  = 1,
+  lambda = .01,
+  standardize = FALSE
+)
+
+pars_L2 = optim(
+  par = init[-1],
+  fn  = penalized_ML2,
+  X   = X,
+  y   = y,
+  lambda  = .01,
+  control = list(reltol = 1e-12)
+)$par
+
+pars_L1 = optim(
+  par = init[-1],
+  fn  = penalized_ML2,
+  X   = X,
+  y   = y,
+  lambda  = .01,
+  type    = 'L1',
+  control = list(reltol = 1e-12)
+)$par
+```
+
+
+```{r penalized-ml-compare-glmnet-show, echo=FALSE}
+rbind(
+    glmnet_L2 = t(as.matrix(coef(glmnetL2))),
+    pars_L2   = pars_L2,
+    glmnet_L1 = t(as.matrix(coef(glmnetL1))),
+    pars_L1   = pars_L1
+  ) %>% 
+  kable_df(digits = 4)
+```
+
+See the subsequent chapters for an additional look at both lasso and ridge regression approaches.
+
+
+### Source
+
+Original code available at https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/penalized_ML.R
+
+
+
+```{r child='lasso.Rmd'}
+```
+
+```{r child='ridge.Rmd'}
+```
+

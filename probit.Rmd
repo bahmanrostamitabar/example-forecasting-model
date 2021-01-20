@@ -1,0 +1,183 @@
+# Probit & Bivariate Probit
+
+Stata users seem to be the primary audience concerned with probit models, but I
+thought I'd play around with one even though I've never had reason to use it.
+Stata examples come from the UCLA ATS website and the Stata manual, so one can
+investigate the Stata result for comparison.
+
+## Standard Probit
+
+The standard probit model is identical to the [logistic model][Logistic
+Regression] but using a different link function.
+
+### Function
+
+```{r probit_ll}
+probit_ll <- function(beta, X, y) {
+  mu = X %*% beta
+  
+  # these produce identical results, but the second is the typical depiction
+  ll = sum(dbinom(
+    y,
+    size = 1,
+    prob = pnorm(mu),
+    log = T
+  ))
+  
+  # ll = sum(y * pnorm(mu, log = T) + (1 - y) * log(1 - pnorm(mu)))
+  
+  -ll
+}
+```
+
+
+### Examples
+
+Example 1 detail available [here](https://stats.idre.ucla.edu/stata/dae/probit-regression/).
+
+```{r probit-example-1}
+library(tidyverse)
+
+admit = haven::read_dta('https://stats.idre.ucla.edu/stat/stata/dae/binary.dta')
+
+head(admit)
+
+X = model.matrix(admit~ gre + gpa + factor(rank), admit)
+y = admit$admit
+
+init = rep(0, ncol(X))
+
+fit = optim(
+  fn  = probit_ll,
+  par = init,
+  X   = X,
+  y   = y,
+  method = 'BFGS'
+)
+
+fit 
+```
+
+
+
+
+Example 2 from Stata manual on [standard probit](http://www.stata.com/manuals13/rprobit.pdf).
+
+> We have data on the make, weight, and mileage rating of 22 foreign and 52 domestic automobiles. We wish to fit a probit model explaining whether a car is foreign based on its weight and mileage."
+
+```{r probit-example-2}
+auto = haven::read_dta('http://www.stata-press.com/data/r13/auto.dta')
+
+head(auto)
+
+X = model.matrix(foreign~ weight + mpg, auto)
+y = auto$foreign
+
+init = rep(0, ncol(X))
+
+fit = optim(
+  fn  = probit_ll,
+  par = init,
+  X = X,
+  y = y
+)
+
+fit
+```
+
+
+
+## Bivariate Probit
+
+For the bivariate model, we are dealing with two binary outcomes and their correlation.
+
+
+Here is the main function.
+
+```{r bivariate_probit_ll}
+bivariate_probit_ll <- function(pars, X, y1, y2) {
+  rho = pars[1]
+  mu1 = X %*% pars[2:(ncol(X) + 1)]
+  mu2 = X %*% pars[(ncol(X) + 2):length(pars)]
+  q1  = ifelse(y1 == 1, 1,-1)
+  q2  = ifelse(y2 == 1, 1,-1)
+  
+  require(mnormt)
+  eta1 = q1 * mu1
+  eta2 = q2 * mu2
+  
+  ll = matrix(NA, nrow = nrow(X))
+  
+  for (i in 1:length(ll)) {
+    corr = q1[i] * q2[i] * rho
+    corr = matrix(c(1, corr, corr, 1), 2)
+    ll[i] = log(
+      pmnorm(
+        x = c(eta1[i], eta2[i]),
+        mean   = c(0, 0),
+        varcov = corr
+      )
+    )
+  }
+  
+  # the loop is probably clearer, and there is no difference in time, but here's
+  # a oneliner ll = mapply(function(e1, e2, q1, q2) log(pmnorm(x = c(e1, e2),
+  # varcov = matrix(c(1,q1*q2*rho,q1*q2*rho,1),2))), eta1, eta2, q1, q2)
+  
+  -sum(ll)
+}
+```
+
+
+
+
+### Example 
+
+From the Stata manual on bivariate probit:
+
+> We wish to model the bivariate outcomes of whether children attend private 
+school and whether the head of the household voted for an increase in property
+tax based on the other covariates.
+
+```{r probit-example-3}
+school = haven::read_dta('http://www.stata-press.com/data/r13/school.dta')
+
+head(school)
+
+X  = model.matrix(private ~ years + logptax + loginc, school)
+y1 = school$private
+y2 = school$vote
+
+init = c(0, rep(0, ncol(X)*2))
+
+# you'll probably get a warning or two, ignore; takes a couple seconds
+fit = optim(
+  fn  = bivariate_probit_ll,
+  par = init,
+  X   = X,
+  y1  = y1,
+  y2  = y2,
+  method = 'BFGS'
+)
+
+
+loglik = fit$value
+rho    = fit$par[1]
+coefs_private = fit$par[2:(ncol(X) + 1)]
+coefs_vote = fit$par[(ncol(X) + 2):length(init)]
+names(coefs_private) = names(coefs_vote) = c('Int', 'years', 'logptax', 'loginc')
+
+list(
+  loglik  = loglik,
+  rho     = rho,
+  Private = coefs_private,
+  Vote    = coefs_vote
+)
+```
+
+
+
+
+## Source
+
+Original code available at https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/bivariateProbit.R

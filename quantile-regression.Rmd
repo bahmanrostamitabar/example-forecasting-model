@@ -1,0 +1,113 @@
+
+# Quantile Regression
+
+## Data Setup
+
+We'll use the <span class="pack" style = "">quantreg</span> package for comparison, and the classic data set on Belgian household income and food expenditure.  Scale income if you want a meaningful 'centercept'.
+
+```{r qr-setup}
+library(tidyverse)
+
+library(quantreg)
+
+data(engel)          
+# engel$income = scale(engel$income)
+
+X = cbind(1, engel$income)
+colnames(X) = c('Intercept', 'income')
+```
+
+## Function
+
+Loss function.  It really is this simple.
+
+```{r qr-func}
+qreg <- function(par, X, y, tau) {
+  lp = X%*%par
+  res = y - lp
+  loss = ifelse(res < 0 , -(1 - tau)*res, tau*res)
+  sum(loss)
+}
+```
+
+## Estimation
+
+We'll estimate the median to start. Compare `optim` output with <span class="pack" style = "">quantreg</span> package.
+
+```{r qr-est}
+optim(
+  par = c(intercept = 0, income = 0),
+  fn  = qreg,
+  X   = X,
+  y   = engel$foodexp,
+  tau = .5
+)$par
+
+rq(foodexp ~ income, tau = .5, data = engel)
+```
+
+
+### Other quantiles
+
+Now we will add additional quantiles to estimate.
+
+```{r qr-quants}
+# quantiles
+qs = c(.05, .1, .25, .5, .75, .9, .95)
+
+fit_rq = coef(rq(foodexp ~ income, tau = qs, data = engel))
+
+fit_qreg = map_df(qs, function(tau)
+  data.frame(t(
+    optim(
+      par = c(intercept = 0, income = 0),
+      fn  = qreg,
+      X   = X,
+      y   = engel$foodexp,
+      tau = tau
+    )$par
+  )))
+```
+
+
+## Comparison
+
+Compare results.
+
+```{r qr-compare, echo =FALSE}
+rbind(fit_rq, t(fit_qreg)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column('coef') %>% 
+  mutate(` ` = rep(c('fit_rq', 'fit_qreg'), each = 2)) %>% 
+  select(` `, everything()) %>% 
+  kable_df()
+```
+
+
+## Visualize
+
+Let's visualize the results.
+
+```{r qr-vis, echo=FALSE}
+engel %>%
+  qplot(data = .,
+        income,
+        foodexp,
+        color = I(scales::alpha('orange', .25))) +
+  geom_abline(aes(
+    intercept = intercept,
+    slope = income,
+    color = group
+  ),
+  data = data.frame(fit_qreg, group = factor(qs))) +
+  scico::scale_color_scico_d(palette = 'vik')
+```
+
+
+## Python
+
+The above is available as a Python demo in the [supplemental section](#python-qreg).
+
+## Source
+
+Original code available at https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/quantile_regression.Rmd

@@ -1,0 +1,122 @@
+# Ordinal Regression
+
+The following demonstrates a standard cumulative link ordinal regression model
+via maximum likelihood. Default is with probit link function. Alternatively you
+can compare it with a logit link, which will result in values roughly
+1.7*parameters estimates from the probit.
+
+
+## Data
+
+This data generation is from the probit perspective, where the underlying continuous latent variable is normally distributed.
+
+```{r ordinal-setup}
+library(tidyverse)
+
+set.seed(808)
+
+N = 1000                                       # Sample size
+x = cbind(x1 = rnorm(N), x2 = rnorm(N))        # predictor variables
+beta   = c(1,-1)                               # coefficients
+y_star = rnorm(N, mean = x %*% beta)           # the underlying latent variable
+y_1 = y_star > -1.5                            # -1.50 first cutpoint
+y_2 = y_star > .75                             #  0.75 second cutpoint
+y_3 = y_star > 1.75                            #  1.75 third cutpoint
+y   = y_1 + y_2 + y_3 + 1                      # target
+
+table(y)
+
+d = data.frame(x, y = factor(y))
+```
+
+
+## Function
+
+```{r ordinal_ll}
+ordinal_ll <- function(par, X, y, probit = TRUE) {
+  K = length(unique(y))                        # number of classes K
+  ncuts = K-1                                  # number of cutpoints/thresholds
+  cuts  = par[(1:ncuts)]                       # cutpoints
+  beta  = par[-(1:ncuts)]                      # regression coefficients
+  lp    = X %*% beta                           # linear predictor
+  ll    = rep(0, length(y))                    # log likelihood
+  pfun  = ifelse(probit, pnorm, plogis)        # which link to use
+  
+  for(k in 1:K){
+    if (k==1) {
+      ll[y==k] = pfun((cuts[k] - lp[y==k]), log = TRUE)
+    }
+    else if (k < K) {
+      ll[y==k] = log(pfun(cuts[k] - lp[y==k]) - pfun(cuts[k-1] - lp[y==k]))
+    }
+    else {
+      ll[y==k] = log(1 - pfun(cuts[k-1] - lp[y==k])) 
+    }
+  }
+  
+  -sum(ll)
+}
+```
+
+
+## Estimation
+
+```{r ordinal-init}
+init = c(-1, 1, 2, 0, 0)         # initial values
+```
+
+```{r ordinal-est}
+fit_probit = optim(
+  init,
+  ordinal_ll,
+  y = y,
+  X = x,
+  probit  = TRUE,
+  control = list(reltol = 1e-10)
+)
+
+fit_logit  = optim(
+  init,
+  ordinal_ll,
+  y = y,
+  X = x,
+  probit  = FALSE,
+  control = list(reltol = 1e-10)
+)
+```
+
+
+
+
+## Comparison
+
+We can compare our results with the <span class="pack" style = "">ordinal</span> package.
+
+```{r ordinal-compare}
+library(ordinal)
+fit_ordpack_probit = clm(y ~ x1 + x2, data = d, link = 'probit')
+fit_ordpack_logit  = clm(y ~ x1 + x2, data = d, link = 'logit')
+```
+
+
+```{r ordinal-compare-show, echo=FALSE}
+resprobit = data.frame(method = c('ordinal_ll', 'ordpack'),
+                       rbind(coef(fit_probit), coef(fit_ordpack_probit)))
+colnames(resprobit) = c('method', paste0('cut_', 1:3), 'beta1', 'beta2')
+
+
+
+reslogit = data.frame(method = c('ordinal_ll', 'ordpack'),
+                      rbind(coef(fit_logit), coef(fit_ordpack_logit)))
+colnames(reslogit) = c('method', paste0('cut_', 1:3), 'beta1', 'beta2')
+
+bind_rows(list(probit = resprobit, logit = reslogit), .id = '') %>% 
+  kable_df()
+```
+
+
+
+
+## Source
+
+Original code available at https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/ordinal_regression.R
